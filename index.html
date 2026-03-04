@@ -3,1162 +3,1220 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bharat Market Pulse — Indian Market Valuation Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<title>Bharat Market Pulse — Live via Google Sheets</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #16161f;
-    --border: rgba(255,255,255,0.07);
-    --gold: #d4a843;
-    --gold-light: #f0c96a;
-    --saffron: #e8732a;
-    --green: #2ecc8f;
-    --red: #e84545;
-    --yellow: #f0c230;
-    --text: #e8e4dc;
-    --muted: #7a7880;
-    --accent: #5c6ef8;
-  }
-
-  * { margin:0; padding:0; box-sizing:border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Decorative grain overlay */
-  body::before {
-    content:'';
-    position:fixed;
-    inset:0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events:none;
-    z-index:1000;
-    opacity:0.4;
-  }
-
-  /* Hero Header */
-  header {
-    padding: 48px 48px 0;
-    position: relative;
-  }
-
-  .header-top {
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    margin-bottom: 12px;
-  }
-
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 13px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--gold);
-  }
-
-  .live-tag {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-  }
-
-  .live-dot {
-    width:7px; height:7px;
-    border-radius:50%;
-    background: var(--green);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(46,204,143,0.4); }
-    50% { opacity:0.7; box-shadow: 0 0 0 6px rgba(46,204,143,0); }
-  }
-
-  h1 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(36px, 5vw, 64px);
-    line-height: 1;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--gold-light) 0%, var(--saffron) 50%, var(--gold) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 6px;
-  }
-
-  .subtitle {
-    font-family: 'Instrument Serif', serif;
-    font-style: italic;
-    font-size: 18px;
-    color: var(--muted);
-    margin-bottom: 36px;
-  }
-
-  .disclaimer {
-    font-size: 10px;
-    color: var(--muted);
-    padding: 10px 16px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: rgba(255,255,255,0.02);
-    margin-bottom: 40px;
-    max-width: 700px;
-  }
-
-  /* Decorative divider */
-  .divider {
-    height: 1px;
-    background: linear-gradient(90deg, var(--gold) 0%, transparent 60%);
-    margin-bottom: 40px;
-  }
-
-  /* Overall market verdict */
-  .verdict-banner {
-    margin: 0 48px 40px;
-    padding: 28px 36px;
-    border-radius: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .verdict-banner.caution {
-    background: linear-gradient(135deg, rgba(240,194,48,0.08) 0%, rgba(232,115,42,0.05) 100%);
-    border-color: rgba(240,194,48,0.25);
-  }
-
-  .verdict-banner::before {
-    content:'';
-    position:absolute;
-    top:-40px; right:-40px;
-    width:200px; height:200px;
-    border-radius:50%;
-    background: radial-gradient(circle, rgba(240,194,48,0.06) 0%, transparent 70%);
-  }
-
-  .verdict-left .label {
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-
-  .verdict-left .verdict-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--yellow);
-  }
-
-  .verdict-right {
-    text-align: right;
-  }
-
-  .verdict-right .score-label {
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-
-  .verdict-score {
-    font-family: 'Syne', sans-serif;
-    font-size: 56px;
-    font-weight: 800;
-    color: var(--yellow);
-    line-height: 1;
-  }
-
-  .verdict-score span {
-    font-size: 20px;
-    color: var(--muted);
-  }
-
-  .verdict-summary {
-    font-size: 13px;
-    color: var(--text);
-    opacity: 0.8;
-    max-width: 500px;
-    line-height: 1.7;
-  }
-
-  /* Layout grid */
-  .main-grid {
-    padding: 0 48px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
-  }
-
-  .full-width {
-    padding: 0 48px;
-    margin-bottom: 32px;
-  }
-
-  /* Section headers */
-  .section-label {
-    font-size: 10px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .section-label::after {
-    content:'';
-    flex:1;
-    height:1px;
-    background: var(--border);
-  }
-
-  /* Cards */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card::before {
-    content:'';
-    position:absolute;
-    top:0; left:0; right:0;
-    height:2px;
-    background: linear-gradient(90deg, var(--gold) 0%, transparent 60%);
-  }
-
-  /* Index Cards */
-  .index-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
-    margin-bottom: 32px;
-    padding: 0 48px;
-  }
-
-  .index-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 18px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .index-card:hover {
-    border-color: rgba(212,168,67,0.3);
-    transform: translateY(-2px);
-  }
-
-  .index-card .idx-name {
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .index-card .idx-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 6px;
-  }
-
-  .index-card .idx-change {
-    font-size: 12px;
-    font-weight: 500;
-    margin-bottom: 10px;
-  }
-
-  .up { color: var(--green); }
-  .down { color: var(--red); }
-  .neutral { color: var(--muted); }
-
-  .idx-pe {
-    font-size: 11px;
-    color: var(--muted);
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .pe-val {
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  /* Valuation meter */
-  .val-meter-wrap {
-    margin-top: 14px;
-  }
-
-  .val-meter-label {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    margin-bottom: 6px;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .val-meter {
-    height: 4px;
-    border-radius: 2px;
-    background: var(--surface2);
-    position: relative;
-    overflow: visible;
-  }
-
-  .val-meter-track {
-    height: 100%;
-    border-radius: 2px;
-    position: relative;
-  }
-
-  .val-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    border: 2px solid var(--bg);
-  }
-
-  /* Sector table */
-  .sector-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .sector-table th {
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding: 10px 14px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    font-weight: 400;
-  }
-
-  .sector-table td {
-    padding: 13px 14px;
-    font-size: 13px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    vertical-align: middle;
-  }
-
-  .sector-table tr:last-child td { border-bottom: none; }
-
-  .sector-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .sector-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .sector-icon {
-    display: inline-block;
-    width: 28px; height: 28px;
-    border-radius: 6px;
-    background: var(--surface2);
-    text-align: center;
-    line-height: 28px;
-    font-size: 14px;
-    margin-right: 10px;
-    vertical-align: middle;
-  }
-
-  /* Signal badge */
-  .signal {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .signal.buy {
-    background: rgba(46,204,143,0.12);
-    color: var(--green);
-    border: 1px solid rgba(46,204,143,0.25);
-  }
-
-  .signal.hold {
-    background: rgba(240,194,48,0.1);
-    color: var(--yellow);
-    border: 1px solid rgba(240,194,48,0.25);
-  }
-
-  .signal.sell {
-    background: rgba(232,69,69,0.1);
-    color: var(--red);
-    border: 1px solid rgba(232,69,69,0.25);
-  }
-
-  .signal.cautious {
-    background: rgba(232,115,42,0.1);
-    color: var(--saffron);
-    border: 1px solid rgba(232,115,42,0.25);
-  }
-
-  /* Risk bar */
-  .risk-bar-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .risk-bar-bg {
-    flex: 1;
-    height: 5px;
-    border-radius: 3px;
-    background: var(--surface2);
-    overflow: hidden;
-  }
-
-  .risk-bar-fill {
-    height: 100%;
-    border-radius: 3px;
-  }
-
-  .risk-label-sm {
-    font-size: 10px;
-    width: 36px;
-    text-align: right;
-    color: var(--muted);
-  }
-
-  /* PE Gauge */
-  .gauge-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-  }
-
-  .gauge-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-  }
-
-  .gauge-card .g-title {
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-  }
-
-  .gauge-svg {
-    width: 120px;
-    height: 70px;
-    margin: 0 auto 10px;
-    display: block;
-  }
-
-  .gauge-val {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-
-  .gauge-sub {
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  /* Risk factors */
-  .risk-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .risk-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
-
-  .risk-icon-wrap {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-
-  .risk-item .r-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-
-  .risk-item .r-desc {
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-
-  .risk-level-badge {
-    font-size: 9px;
-    padding: 2px 7px;
-    border-radius: 10px;
-    letter-spacing: 0.1em;
-    font-weight: 600;
-    margin-left: 8px;
-    text-transform: uppercase;
-  }
-
-  .lvl-high { background: rgba(232,69,69,0.15); color: var(--red); }
-  .lvl-med { background: rgba(240,194,48,0.12); color: var(--yellow); }
-  .lvl-low { background: rgba(46,204,143,0.12); color: var(--green); }
-
-  /* Strategy box */
-  .strategy-box {
-    background: linear-gradient(135deg, rgba(92,110,248,0.08) 0%, rgba(212,168,67,0.06) 100%);
-    border: 1px solid rgba(92,110,248,0.2);
-    border-radius: 14px;
-    padding: 28px 32px;
-    margin: 0 48px 40px;
-  }
-
-  .strategy-box h3 {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    color: var(--gold-light);
-  }
-
-  .strategy-points {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .strategy-point {
-    display: flex;
-    gap: 10px;
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--text);
-    opacity: 0.85;
-  }
-
-  .strategy-point::before {
-    content: '→';
-    color: var(--gold);
-    flex-shrink: 0;
-  }
-
-  /* Valuation thermometer */
-  .thermo-wrap {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    border-radius: 6px;
-    overflow: hidden;
-    height: 28px;
-    margin-top: 12px;
-  }
-
-  .thermo-seg {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    transition: opacity 0.2s;
-    position: relative;
-  }
-
-  .thermo-seg.inactive { opacity: 0.25; }
-
-  .thermo-pointer {
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-bottom: 6px solid var(--text);
-  }
-
-  /* Footer */
-  footer {
-    padding: 24px 48px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  /* Animations */
-  @keyframes fadeUp {
-    from { opacity:0; transform: translateY(16px); }
-    to { opacity:1; transform: translateY(0); }
-  }
-
-  .fade-up { animation: fadeUp 0.5s ease forwards; }
-  .delay-1 { animation-delay: 0.1s; opacity:0; }
-  .delay-2 { animation-delay: 0.2s; opacity:0; }
-  .delay-3 { animation-delay: 0.3s; opacity:0; }
-  .delay-4 { animation-delay: 0.4s; opacity:0; }
-  .delay-5 { animation-delay: 0.5s; opacity:0; }
-
-  .sparkline {
-    width: 60px;
-    height: 22px;
-    vertical-align: middle;
-  }
-
-  @media (max-width: 1100px) {
-    .index-grid { grid-template-columns: repeat(3,1fr); }
-    .main-grid { grid-template-columns: 1fr; }
-    .gauge-section { grid-template-columns: 1fr 1fr; }
-  }
-  @media (max-width: 768px) {
-    header, .main-grid, .full-width, .strategy-box, footer { padding-left:20px; padding-right:20px; }
-    .index-grid { grid-template-columns: repeat(2,1fr); padding:0 20px; }
-    .verdict-banner { flex-direction:column; gap:20px; margin:0 20px 24px; }
-    .risk-grid { grid-template-columns: 1fr; }
-    .strategy-points { grid-template-columns: 1fr; }
-    .gauge-section { grid-template-columns: 1fr; }
-  }
+:root{
+  --bg:#07080f;--sf:#0e0f1a;--s2:#13141f;--s3:#1a1b2e;
+  --bd:rgba(255,255,255,0.07);
+  --gold:#d4a843;--gold2:#f0c96a;--saffron:#e8732a;
+  --green:#00e5a0;--red:#ff4d6d;--yellow:#ffd166;--blue:#4da6ff;
+  --text:#edeae0;--mu:#6b6a7a;--mu2:#9896a8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:200;height:56px;background:rgba(7,8,15,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 24px;justify-content:space-between;gap:8px;}
+.brand{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto;}
+.nt{padding:6px 14px;border-radius:7px;font-size:11px;cursor:pointer;border:none;background:transparent;color:var(--mu2);transition:all .2s;white-space:nowrap;font-family:'DM Mono',monospace;}
+.nt:hover{color:var(--text);background:var(--s2);}
+.nt.on{background:rgba(212,168,67,.12);color:var(--gold);border:1px solid rgba(212,168,67,.2);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.live-pill{display:flex;align-items:center;gap:5px;font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--mu2);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.5);}50%{box-shadow:0 0 0 6px rgba(0,229,160,0);}}
+
+/* ── SECTIONS ── */
+.sec{display:none;padding:22px 26px 60px;animation:fadeIn .3s ease;}
+.sec.on{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── CARDS ── */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:20px;position:relative;overflow:hidden;transition:border-color .2s;}
+.ct{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent 60%);}
+.ctitle{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mu2);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+
+/* ── INDEX CARDS ── */
+.icard{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:16px;transition:all .3s;}
+.icard:hover{border-color:rgba(212,168,67,.3);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.5);}
+.iname{font-size:10px;letter-spacing:.1em;color:var(--mu2);text-transform:uppercase;margin-bottom:6px;}
+.iprice{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:3px;transition:color .5s;}
+.ichg{font-size:11px;margin-bottom:8px;min-height:16px;}
+.imeta{font-size:10px;color:var(--mu);padding-top:8px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
+.up{color:var(--green);}
+.dn{color:var(--red);}
+
+/* ── SIGNALS ── */
+.sig{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.sig.buy{background:rgba(0,229,160,.1);color:var(--green);border:1px solid rgba(0,229,160,.2);}
+.sig.hold{background:rgba(255,209,102,.1);color:var(--yellow);border:1px solid rgba(255,209,102,.2);}
+.sig.avoid{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.2);}
+.sig.watch{background:rgba(232,115,42,.1);color:var(--saffron);border:1px solid rgba(232,115,42,.2);}
+
+/* ── STATUS BAR ── */
+.sbar{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--mu2);margin-bottom:16px;padding:10px 16px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;flex-wrap:wrap;}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s;}
+.rbtn{margin-left:auto;background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.25);color:var(--gold);border-radius:6px;padding:5px 14px;font-size:10px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;}
+.rbtn:hover{background:rgba(212,168,67,.2);}
+.cfg-btn{background:rgba(77,166,255,.1);border:1px solid rgba(77,166,255,.2);color:var(--blue);border-radius:6px;padding:5px 14px;font-size:10px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;}
+.cfg-btn:hover{background:rgba(77,166,255,.2);}
+
+/* ── SHEET CONFIG PANEL ── */
+.cfg-panel{background:linear-gradient(135deg,rgba(77,166,255,.06),rgba(0,229,160,.03));border:1px solid rgba(77,166,255,.2);border-radius:14px;padding:22px;margin-bottom:18px;}
+.cfg-panel h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--blue);margin-bottom:14px;}
+.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--gold);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--saffron));color:#000;border:none;border-radius:8px;padding:10px 22px;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;cursor:pointer;letter-spacing:.05em;transition:opacity .2s;}
+.btn-gold:hover{opacity:.85;}
+.btn-outline{background:transparent;border:1px solid var(--bd);color:var(--mu2);border-radius:8px;padding:10px 18px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;transition:all .2s;}
+.btn-outline:hover{border-color:var(--mu2);color:var(--text);}
+
+/* ── SETUP STEPS ── */
+.step{display:flex;gap:14px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.05);}
+.step:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.step-n{width:30px;height:30px;border-radius:50%;background:rgba(212,168,67,.12);border:1px solid rgba(212,168,67,.25);color:var(--gold);font-family:'Syne',sans-serif;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.step h4{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--gold2);margin-bottom:6px;}
+.step p{font-size:11px;color:var(--mu2);line-height:1.7;margin-bottom:8px;}
+.code{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--green);font-family:'DM Mono',monospace;line-height:1.9;overflow-x:auto;white-space:pre;}
+.copy-btn{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);color:var(--mu2);border-radius:5px;padding:4px 10px;font-size:9px;cursor:pointer;font-family:'DM Mono',monospace;margin-top:6px;transition:all .2s;}
+.copy-btn:hover{color:var(--green);border-color:var(--green);}
+
+/* ── ARCH DIAGRAM ── */
+.arch{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;padding:16px 0;}
+.arch-box{text-align:center;padding:14px 16px;background:var(--s2);border-radius:10px;min-width:100px;}
+.arch-arrow{color:var(--mu2);font-size:18px;padding:0 4px;}
+
+/* ── METER ── */
+.meter{height:5px;border-radius:3px;background:var(--s3);overflow:hidden;}
+.mf{height:100%;border-radius:3px;}
+
+/* ── VERDICT ── */
+.verdict{background:linear-gradient(135deg,rgba(212,168,67,.07),rgba(232,115,42,.04));border:1px solid rgba(212,168,67,.2);border-radius:16px;padding:22px 26px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:20px;flex-wrap:wrap;}
+.vscore{font-family:'Syne',sans-serif;font-size:56px;font-weight:800;line-height:1;color:var(--yellow);}
+.vscore span{font-size:18px;color:var(--mu);}
+
+/* ── SECTOR TABLE ── */
+.stbl{width:100%;border-collapse:collapse;}
+.stbl th{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--mu);padding:9px 12px;text-align:left;border-bottom:1px solid var(--bd);font-weight:400;}
+.stbl td{padding:10px 12px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);}
+.stbl tr:hover td{background:rgba(255,255,255,.02);}
+.stbl tr:last-child td{border-bottom:none;}
+
+/* ── CALC ── */
+.cslider{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:var(--s3);outline:none;cursor:pointer;margin:8px 0;}
+.cslider::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--gold);cursor:pointer;border:2px solid var(--bg);}
+.cres{background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15);border-radius:10px;padding:16px;margin-top:14px;}
+.crrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.crrow:last-child{border-bottom:none;}
+
+@keyframes shimmer{0%,100%{opacity:.3;}50%{opacity:.9;}}
+.skel{animation:shimmer 1.2s infinite;color:var(--mu2);}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px;}
+@media(max-width:1100px){.g5{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:800px){.g3,.g2{grid-template-columns:1fr;}.g5{grid-template-columns:repeat(2,1fr);}.verdict{flex-direction:column;}.nav-tabs{display:none;}}
+@media(max-width:480px){.g4,.g5{grid-template-columns:1fr;}.sec{padding:14px 12px 50px;}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="header-top">
-    <div class="logo">Bharat Market Pulse</div>
-    <div class="live-tag">
-      <div class="live-dot"></div>
-      Data as of Mar 2026 · EOD
+<nav>
+  <div class="brand">⚡ Bharat Pulse</div>
+  <div class="nav-tabs">
+    <button class="nt on"  onclick="goTab('overview',this)">📊 Overview</button>
+    <button class="nt"     onclick="goTab('setup',this)">⚙️ Sheet Setup</button>
+    <button class="nt"     onclick="goTab('sectors',this)">🏭 Sectors</button>
+    <button class="nt"     onclick="goTab('macro',this)">🌐 Macro</button>
+    <button class="nt"     onclick="goTab('calc',this)">🧮 SIP Calc</button>
+    <button class="nt"     onclick="goTab('risk',this)">⚠️ Risk</button>
+  </div>
+  <div class="nav-right">
+    <div class="live-pill">
+      <div class="dot" id="navDot" style="background:var(--yellow);"></div>
+      <span id="navSrc">Connecting…</span>
     </div>
+    <span id="navTime" style="font-size:10px;color:var(--mu2);"></span>
   </div>
-  <h1>Indian Market<br>Valuation Radar</h1>
-  <p class="subtitle">Real-time pulse on indices, sectors & whether now is the right time to deploy capital</p>
-  <div class="disclaimer">
-    ⚠ Educational tool only. Not SEBI registered investment advice. All valuations use trailing 12-month data. Always consult a financial advisor before investing.
-  </div>
-  <div class="divider"></div>
-</header>
+</nav>
 
-<!-- Overall Market Verdict -->
-<div class="verdict-banner caution fade-up delay-1">
-  <div class="verdict-left">
-    <div class="label">Overall Market Stance</div>
-    <div class="verdict-text">⚡ CAUTIOUS ACCUMULATION</div>
-    <div style="margin-top:10px" class="verdict-summary">
-      Nifty 50 trades near fair value at 21.4× trailing P/E (10-year avg: 20×). Markets have corrected ~12% from Sep 2024 highs, creating selective opportunities. Favour large-caps over mid/small-caps. SIPs ideal; lump-sum only in dips.
-    </div>
-  </div>
-  <div class="verdict-right">
-    <div class="score-label">Valuation Score</div>
-    <div class="verdict-score">62<span>/100</span></div>
-    <div style="font-size:12px;color:var(--muted);margin-top:6px;">Fair ↔ Mildly Rich</div>
-  </div>
-</div>
+<!-- ════════════════════════════════
+     OVERVIEW
+════════════════════════════════ -->
+<div class="sec on" id="sec-overview">
 
-<!-- Indices -->
-<div class="section-label fade-up delay-1" style="padding:0 48px;margin-bottom:16px;">
-  Key Indices
-</div>
-
-<div class="index-grid fade-up delay-2">
-
-  <!-- Nifty 50 -->
-  <div class="index-card">
-    <div class="idx-name">Nifty 50</div>
-    <div class="idx-value">22,476</div>
-    <div class="idx-change up">▲ 0.42%</div>
-    <div class="idx-pe">
-      <span>P/E</span><span class="pe-val" style="color:var(--yellow)">21.4×</span>
-    </div>
-    <div class="val-meter-wrap">
-      <div class="val-meter-label"><span>Cheap</span><span>Expensive</span></div>
-      <div class="val-meter" style="background:linear-gradient(90deg,#2ecc8f 0%,#f0c230 50%,#e84545 100%)">
-        <div class="val-dot" style="left:52%;background:var(--yellow);"></div>
+  <div class="verdict">
+    <div>
+      <div style="font-family:Syne;font-size:21px;font-weight:700;color:var(--yellow);margin-bottom:8px;">⚡ Cautious Accumulation Zone</div>
+      <div style="font-size:12px;color:var(--mu2);line-height:1.8;max-width:480px;">Nifty 50 near fair value ~21×. Markets corrected 12% from Sep 2024 peaks. Large-caps & Banking offer best risk-reward. Continue SIPs; avoid lump-sum in mid/small-caps.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+        <span class="sig buy">🟢 Large-cap: Buy on dips</span>
+        <span class="sig hold">🟡 Mid-cap: SIP only</span>
+        <span class="sig avoid">🔴 Small-cap: Avoid lump-sum</span>
       </div>
     </div>
-    <div style="margin-top:10px;"><span class="signal hold">● Hold</span></div>
+    <div style="text-align:center;flex-shrink:0;">
+      <div style="font-size:10px;color:var(--mu2);letter-spacing:.15em;margin-bottom:4px;text-transform:uppercase;">Valuation Score</div>
+      <div class="vscore" id="vscore">0<span>/100</span></div>
+      <div style="font-size:11px;color:var(--mu2);margin-top:4px;">Fair ↔ Mildly Rich</div>
+    </div>
   </div>
 
-  <!-- Sensex -->
-  <div class="index-card">
-    <div class="idx-name">BSE Sensex</div>
-    <div class="idx-value">74,339</div>
-    <div class="idx-change up">▲ 0.38%</div>
-    <div class="idx-pe">
-      <span>P/E</span><span class="pe-val" style="color:var(--yellow)">21.8×</span>
-    </div>
-    <div class="val-meter-wrap">
-      <div class="val-meter-label"><span>Cheap</span><span>Expensive</span></div>
-      <div class="val-meter" style="background:linear-gradient(90deg,#2ecc8f 0%,#f0c230 50%,#e84545 100%)">
-        <div class="val-dot" style="left:54%;background:var(--yellow);"></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;"><span class="signal hold">● Hold / SIP</span></div>
+  <!-- STATUS BAR -->
+  <div class="sbar">
+    <div class="sdot" id="sDot" style="background:var(--yellow);animation:pulse 1.5s infinite;"></div>
+    <span id="sTxt">Initializing…</span>
+    <span id="sheetTag" style="display:none;font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(0,229,160,.1);color:var(--green);border:1px solid rgba(0,229,160,.2);">📊 Google Sheets Live</span>
+    <button class="rbtn" onclick="fetchFromSheet()">↻ Refresh</button>
+    <button class="cfg-btn" onclick="goTab('setup',document.querySelectorAll('.nt')[1])">⚙️ Configure</button>
   </div>
 
-  <!-- Nifty Bank -->
-  <div class="index-card">
-    <div class="idx-name">Nifty Bank</div>
-    <div class="idx-value">48,214</div>
-    <div class="idx-change up">▲ 0.61%</div>
-    <div class="idx-pe">
-      <span>P/B</span><span class="pe-val" style="color:var(--green)">2.1×</span>
-    </div>
-    <div class="val-meter-wrap">
-      <div class="val-meter-label"><span>Cheap</span><span>Expensive</span></div>
-      <div class="val-meter" style="background:linear-gradient(90deg,#2ecc8f 0%,#f0c230 50%,#e84545 100%)">
-        <div class="val-dot" style="left:36%;background:var(--green);"></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;"><span class="signal buy">● Buy</span></div>
+  <!-- INDEX CARDS (built by JS) -->
+  <div class="g5" style="margin-bottom:18px;" id="idxGrid"></div>
+
+  <!-- Last sheet update info -->
+  <div id="sheetInfo" style="display:none;font-size:10px;color:var(--mu2);margin-bottom:16px;padding:8px 12px;background:rgba(0,0,0,.2);border-radius:8px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+    <span>📊 Source: <b style="color:var(--green);">Google Sheets</b></span>
+    <span>🕐 Sheet updated: <b id="sheetUpdatedAt" style="color:var(--text);">—</b></span>
+    <span>🔄 App refresh: <b id="nextRefresh" style="color:var(--text);">60s</b></span>
+    <a id="openSheetLink" href="#" target="_blank" style="color:var(--blue);margin-left:auto;">Open Sheet ↗</a>
   </div>
 
-  <!-- Nifty Midcap 100 -->
-  <div class="index-card">
-    <div class="idx-name">Nifty Midcap 100</div>
-    <div class="idx-value">49,867</div>
-    <div class="idx-change down">▼ 0.18%</div>
-    <div class="idx-pe">
-      <span>P/E</span><span class="pe-val" style="color:var(--red)">32.6×</span>
-    </div>
-    <div class="val-meter-wrap">
-      <div class="val-meter-label"><span>Cheap</span><span>Expensive</span></div>
-      <div class="val-meter" style="background:linear-gradient(90deg,#2ecc8f 0%,#f0c230 50%,#e84545 100%)">
-        <div class="val-dot" style="left:76%;background:var(--red);"></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;"><span class="signal sell">● Overvalued</span></div>
-  </div>
-
-  <!-- Nifty IT -->
-  <div class="index-card">
-    <div class="idx-name">Nifty IT</div>
-    <div class="idx-value">36,880</div>
-    <div class="idx-change down">▼ 1.12%</div>
-    <div class="idx-pe">
-      <span>P/E</span><span class="pe-val" style="color:var(--saffron)">27.3×</span>
-    </div>
-    <div class="val-meter-wrap">
-      <div class="val-meter-label"><span>Cheap</span><span>Expensive</span></div>
-      <div class="val-meter" style="background:linear-gradient(90deg,#2ecc8f 0%,#f0c230 50%,#e84545 100%)">
-        <div class="val-dot" style="left:64%;background:var(--saffron);"></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;"><span class="signal cautious">● Cautious</span></div>
-  </div>
-
-</div>
-
-<!-- Gauge metrics -->
-<div class="full-width fade-up delay-3">
-  <div class="section-label">Nifty 50 Valuation Gauges</div>
-  <div class="gauge-section">
-
-    <div class="gauge-card">
-      <div class="g-title">Trailing P/E Ratio</div>
-      <svg class="gauge-svg" viewBox="0 0 120 70">
-        <defs>
-          <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#2ecc8f"/>
-            <stop offset="50%" style="stop-color:#f0c230"/>
-            <stop offset="100%" style="stop-color:#e84545"/>
-          </linearGradient>
-        </defs>
-        <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" stroke-linecap="round"/>
-        <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="url(#g1)" stroke-width="10" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0" opacity="0.6"/>
-        <!-- needle at ~52% -->
-        <line x1="60" y1="65" x2="34" y2="24" stroke="white" stroke-width="2" stroke-linecap="round" transform="rotate(8 60 65)"/>
-        <circle cx="60" cy="65" r="5" fill="white"/>
-        <text x="60" y="85" text-anchor="middle" fill="#7a7880" font-size="8" font-family="DM Mono">10yr avg: 20×</text>
-      </svg>
-      <div class="gauge-val" style="color:var(--yellow)">21.4×</div>
-      <div class="gauge-sub">Slightly above average</div>
-      <div class="thermo-wrap" style="margin-top:10px;height:20px;">
-        <div class="thermo-seg" style="background:#2ecc8f22;color:var(--green)">Cheap<br><small>&lt;16×</small></div>
-        <div class="thermo-seg" style="background:#2ecc8f22;color:var(--green)">Fair<br><small>16–20×</small></div>
-        <div class="thermo-seg" style="background:rgba(240,194,48,0.3);color:var(--yellow);position:relative;">Mildly Rich<br><small>20–25×</small><div class="thermo-pointer"></div></div>
-        <div class="thermo-seg inactive" style="background:#e8454522;color:var(--red)">Rich<br><small>&gt;25×</small></div>
+  <!-- THREE CHARTS ROW -->
+  <div class="g3" style="margin-bottom:16px;">
+    <!-- Fear & Greed -->
+    <div class="card">
+      <div class="ct"></div>
+      <div class="ctitle">Fear & Greed Index</div>
+      <div style="text-align:center;padding:6px 0;">
+        <svg width="190" height="106" viewBox="0 0 190 106" style="display:block;margin:0 auto 8px;">
+          <defs><linearGradient id="fgG" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#ff4d6d"/><stop offset="50%" stop-color="#ffd166"/><stop offset="100%" stop-color="#00e5a0"/>
+          </linearGradient></defs>
+          <path d="M15,97 A80,80 0 0,1 175,97" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="13" stroke-linecap="round"/>
+          <path d="M15,97 A80,80 0 0,1 175,97" fill="none" stroke="url(#fgG)" stroke-width="13" stroke-linecap="round" opacity=".75"/>
+          <g id="fgNeedle" style="transform-origin:95px 97px;transform:rotate(-10deg);transition:transform 1.4s cubic-bezier(.34,1.56,.64,1);">
+            <line x1="95" y1="97" x2="95" y2="22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="95" cy="97" r="5" fill="white" stroke="rgba(255,255,255,.3)" stroke-width="2"/>
+          </g>
+          <text x="15" y="110" fill="#ff4d6d" font-size="8" font-family="DM Mono">FEAR</text>
+          <text x="148" y="110" fill="#00e5a0" font-size="8" font-family="DM Mono">GREED</text>
+        </svg>
+        <div style="font-family:Syne;font-size:38px;font-weight:800;color:var(--yellow);" id="fgVal">48</div>
+        <div style="font-size:11px;color:var(--mu2);margin-top:2px;" id="fgLbl">Neutral — Slight Fear</div>
+        <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:10px;color:var(--mu2);">
+          <span>1W: <b style="color:var(--text)">52</b></span>
+          <span>1M: <b style="color:var(--text)">61</b></span>
+          <span>1Y: <b style="color:var(--text)">74</b></span>
+        </div>
       </div>
     </div>
 
-    <div class="gauge-card">
-      <div class="g-title">Price-to-Book (P/B)</div>
-      <svg class="gauge-svg" viewBox="0 0 120 70">
-        <defs>
-          <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#2ecc8f"/>
-            <stop offset="50%" style="stop-color:#f0c230"/>
-            <stop offset="100%" style="stop-color:#e84545"/>
-          </linearGradient>
-        </defs>
-        <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" stroke-linecap="round"/>
-        <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="url(#g2)" stroke-width="10" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0" opacity="0.6"/>
-        <line x1="60" y1="65" x2="34" y2="24" stroke="white" stroke-width="2" stroke-linecap="round" transform="rotate(20 60 65)"/>
-        <circle cx="60" cy="65" r="5" fill="white"/>
-        <text x="60" y="85" text-anchor="middle" fill="#7a7880" font-size="8" font-family="DM Mono">10yr avg: 3.0×</text>
-      </svg>
-      <div class="gauge-val" style="color:var(--yellow)">3.4×</div>
-      <div class="gauge-sub">Above historical mean</div>
-      <div class="thermo-wrap" style="margin-top:10px;height:20px;">
-        <div class="thermo-seg" style="background:#2ecc8f22;color:var(--green)">Cheap<br><small>&lt;2.5×</small></div>
-        <div class="thermo-seg" style="background:#2ecc8f22;color:var(--green)">Fair<br><small>2.5–3×</small></div>
-        <div class="thermo-seg" style="background:rgba(240,194,48,0.3);color:var(--yellow);position:relative;">Mildly Rich<br><small>3–4×</small><div class="thermo-pointer"></div></div>
-        <div class="thermo-seg inactive" style="background:#e8454522;color:var(--red)">Rich<br><small>&gt;4×</small></div>
-      </div>
+    <!-- Nifty Chart -->
+    <div class="card">
+      <div class="ct"></div>
+      <div class="ctitle">Nifty 50 — 1 Year<span id="niftyRet" style="font-size:9px;color:var(--mu2);"></span></div>
+      <div style="position:relative;height:145px;"><canvas id="cNifty"></canvas></div>
     </div>
 
-    <div class="gauge-card">
-      <div class="g-title">Earnings Yield vs 10Y Bond</div>
-      <svg class="gauge-svg" viewBox="0 0 120 70">
-        <defs>
-          <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#e84545"/>
-            <stop offset="50%" style="stop-color:#f0c230"/>
-            <stop offset="100%" style="stop-color:#2ecc8f"/>
-          </linearGradient>
-        </defs>
-        <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" stroke-linecap="round"/>
-        <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="url(#g3)" stroke-width="10" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0" opacity="0.6"/>
-        <line x1="60" y1="65" x2="34" y2="24" stroke="white" stroke-width="2" stroke-linecap="round" transform="rotate(-15 60 65)"/>
-        <circle cx="60" cy="65" r="5" fill="white"/>
-        <text x="60" y="85" text-anchor="middle" fill="#7a7880" font-size="8" font-family="DM Mono">Bond yield: 6.8%</text>
-      </svg>
-      <div class="gauge-val" style="color:var(--saffron)">4.7%</div>
-      <div class="gauge-sub">Equity premium shrinking</div>
-      <div class="thermo-wrap" style="margin-top:10px;height:20px;">
-        <div class="thermo-seg inactive" style="background:#e8454522;color:var(--red)">Unattractive<br><small>&lt;2%</small></div>
-        <div class="thermo-seg" style="background:rgba(240,194,48,0.3);color:var(--yellow);position:relative;">Neutral<br><small>2–5%</small><div class="thermo-pointer"></div></div>
-        <div class="thermo-seg" style="background:#2ecc8f22;color:var(--green)">Attractive<br><small>&gt;5%</small></div>
+    <!-- Market Breadth -->
+    <div class="card">
+      <div class="ct"></div>
+      <div class="ctitle">Market Breadth — NSE</div>
+      <div class="g2" style="gap:8px;margin-bottom:12px;">
+        <div style="text-align:center;background:var(--s2);border-radius:10px;padding:12px;">
+          <div style="font-family:Syne;font-size:26px;font-weight:800;color:var(--green);" id="bAdv">—</div>
+          <div style="font-size:9px;color:var(--mu2);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Advances</div>
+        </div>
+        <div style="text-align:center;background:var(--s2);border-radius:10px;padding:12px;">
+          <div style="font-family:Syne;font-size:26px;font-weight:800;color:var(--red);" id="bDec">—</div>
+          <div style="font-size:9px;color:var(--mu2);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Declines</div>
+        </div>
+      </div>
+      <div style="display:flex;height:20px;border-radius:6px;overflow:hidden;margin-bottom:12px;">
+        <div id="bBarA" style="flex:55;background:rgba(0,229,160,.18);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--green);font-weight:700;transition:flex .8s;"></div>
+        <div id="bBarD" style="flex:45;background:rgba(255,77,109,.18);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--red);font-weight:700;transition:flex .8s;"></div>
+      </div>
+      <div style="font-size:10px;color:var(--mu2);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>India VIX</span><span style="color:var(--yellow);" id="vixVal">—</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Data source</span><span style="color:var(--green);">📊 Google Sheets</span></div>
       </div>
     </div>
-
   </div>
-</div>
 
-<!-- Sector Breakdown -->
-<div class="full-width fade-up delay-3">
-  <div class="section-label">Sector Valuation & Signal Matrix</div>
+  <!-- VALUATION GAUGES -->
+  <div class="g4" style="margin-bottom:16px;">
+    <div class="card"><div class="ct"></div><div class="ctitle">TTM P/E</div>
+      <div style="font-family:Syne;font-size:28px;font-weight:800;color:var(--yellow);" id="gPE">21.4×</div>
+      <div style="font-size:10px;color:var(--mu2);margin:4px 0 10px;">10yr avg: 20.1×</div>
+      <div class="meter"><div class="mf" style="width:54%;background:linear-gradient(90deg,var(--green),var(--yellow));"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mu);margin-top:4px;"><span>14×</span><span>30×</span></div>
+      <span class="sig hold" style="margin-top:10px;display:inline-block;">Mildly Rich</span>
+    </div>
+    <div class="card"><div class="ct"></div><div class="ctitle">Price / Book</div>
+      <div style="font-family:Syne;font-size:28px;font-weight:800;color:var(--yellow);">3.4×</div>
+      <div style="font-size:10px;color:var(--mu2);margin:4px 0 10px;">10yr avg: 3.0×</div>
+      <div class="meter"><div class="mf" style="width:60%;background:linear-gradient(90deg,var(--green),var(--yellow));"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mu);margin-top:4px;"><span>2×</span><span>5×</span></div>
+      <span class="sig hold" style="margin-top:10px;display:inline-block;">Above Avg</span>
+    </div>
+    <div class="card"><div class="ct"></div><div class="ctitle">Earnings Yield</div>
+      <div style="font-family:Syne;font-size:28px;font-weight:800;color:var(--saffron);">4.7%</div>
+      <div style="font-size:10px;color:var(--mu2);margin:4px 0 10px;">Bond yield: 6.8%</div>
+      <div class="meter"><div class="mf" style="width:40%;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green));"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mu);margin-top:4px;"><span>2%</span><span>8%</span></div>
+      <span class="sig watch" style="margin-top:10px;display:inline-block;">ERP Thin</span>
+    </div>
+    <div class="card"><div class="ct"></div><div class="ctitle">Mkt Cap / GDP</div>
+      <div style="font-family:Syne;font-size:28px;font-weight:800;color:var(--saffron);">94%</div>
+      <div style="font-size:10px;color:var(--mu2);margin:4px 0 10px;">Long-term avg: 80%</div>
+      <div class="meter"><div class="mf" style="width:65%;background:linear-gradient(90deg,var(--green),var(--yellow),var(--saffron));"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mu);margin-top:4px;"><span>60%</span><span>120%</span></div>
+      <span class="sig watch" style="margin-top:10px;display:inline-block;">Slightly High</span>
+    </div>
+  </div>
+
+  <!-- PE HISTORY -->
   <div class="card">
-    <table class="sector-table">
-      <thead>
-        <tr>
-          <th>Sector</th>
-          <th>P/E (TTM)</th>
-          <th>P/B</th>
-          <th>EPS Growth</th>
-          <th>Valuation vs Hist.</th>
-          <th>Risk</th>
-          <th>Signal</th>
-        </tr>
-      </thead>
-      <tbody id="sectorBody">
-        <!-- filled by JS -->
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Risk Factors -->
-<div class="main-grid fade-up delay-4">
-  <div>
-    <div class="section-label">Key Risk Factors</div>
-    <div class="risk-grid">
-
-      <div class="risk-item">
-        <div class="risk-icon-wrap" style="background:rgba(232,69,69,0.1);">🌍</div>
-        <div>
-          <div class="r-label">Global Macro Headwinds<span class="risk-level-badge lvl-high">High</span></div>
-          <div class="r-desc">US Fed rate trajectory, USD strength, and potential EM fund outflows remain key near-term threats.</div>
-        </div>
-      </div>
-
-      <div class="risk-item">
-        <div class="risk-icon-wrap" style="background:rgba(240,194,48,0.1);">🏦</div>
-        <div>
-          <div class="r-label">FII Selling Pressure<span class="risk-level-badge lvl-high">High</span></div>
-          <div class="r-desc">FIIs have pulled ₹2.2L Cr in FY25. Any reversal could be a strong tailwind, but uncertainty persists.</div>
-        </div>
-      </div>
-
-      <div class="risk-item">
-        <div class="risk-icon-wrap" style="background:rgba(232,115,42,0.1);">💹</div>
-        <div>
-          <div class="r-label">Earnings Slowdown<span class="risk-level-badge lvl-med">Medium</span></div>
-          <div class="r-desc">Nifty 50 EPS growth expected at 10–12% in FY26 vs 18% in FY24. Margin compression a concern.</div>
-        </div>
-      </div>
-
-      <div class="risk-item">
-        <div class="risk-icon-wrap" style="background:rgba(240,194,48,0.1);">🌧️</div>
-        <div>
-          <div class="r-label">Monsoon / Agri Risk<span class="risk-level-badge lvl-med">Medium</span></div>
-          <div class="r-desc">Uneven rainfall can spike food inflation, affecting RBI rate trajectory and rural consumption.</div>
-        </div>
-      </div>
-
-      <div class="risk-item">
-        <div class="risk-icon-wrap" style="background:rgba(46,204,143,0.1);">🏛️</div>
-        <div>
-          <div class="r-label">Political Stability<span class="risk-level-badge lvl-low">Low</span></div>
-          <div class="r-desc">Stable central government with continued reform focus. State elections calendar manageable.</div>
-        </div>
-      </div>
-
-      <div class="risk-item">
-        <div class="risk-icon-wrap" style="background:rgba(232,69,69,0.1);">⚡</div>
-        <div>
-          <div class="r-label">Midcap / Smallcap Froth<span class="risk-level-badge lvl-high">High</span></div>
-          <div class="r-desc">Midcap 100 at 32× P/E vs 24× historical avg. Significant de-rating risk on any liquidity shock.</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <div>
-    <div class="section-label">Risk-O-Meter by Asset Class</div>
-    <div class="card" style="height:auto;">
-      <table style="width:100%;border-collapse:collapse;">
-        <tbody id="riskTable"></tbody>
-      </table>
+    <div class="ct"></div>
+    <div class="ctitle">Nifty 50 P/E — 10 Year History<span style="font-size:9px;color:var(--mu2);">Dashed = 20yr avg 20.1×</span></div>
+    <div style="position:relative;height:180px;"><canvas id="cPE"></canvas></div>
+    <div style="display:flex;gap:20px;margin-top:10px;font-size:10px;flex-wrap:wrap;">
+      <span style="color:var(--mu2)">Avg: <b style="color:var(--text)">20.1×</b></span>
+      <span style="color:var(--mu2)">Min: <b style="color:var(--green)">16.2×</b> (COVID crash)</span>
+      <span style="color:var(--mu2)">Max: <b style="color:var(--red)">38.4×</b> (COVID recovery)</span>
+      <span style="color:var(--mu2)">Now: <b style="color:var(--yellow)">21.4×</b></span>
     </div>
   </div>
 </div>
 
-<!-- Strategy -->
-<div class="strategy-box fade-up delay-5">
-  <h3>📋 Recommended Investment Strategy — March 2026</h3>
-  <div class="strategy-points">
-    <div class="strategy-point">Continue SIPs in large-cap and flexi-cap funds; do NOT pause them during volatility.</div>
-    <div class="strategy-point">Avoid fresh lump-sum in midcap/smallcap funds at current P/E of 32×+; wait for a 15–20% correction.</div>
-    <div class="strategy-point">Banking & Financials sector offers best risk-reward — P/B below historical average with strong loan growth.</div>
-    <div class="strategy-point">FMCG and Pharma as defensive allocation (15–20%) if risk appetite is low.</div>
-    <div class="strategy-point">IT sector: Cautious. US recession fears and AI disruption weigh on near-term revenue guidance.</div>
-    <div class="strategy-point">Infrastructure / Capital Goods: Selective buys on dips; government capex cycle remains multi-year.</div>
-    <div class="strategy-point">Keep 10–15% in liquid/short-term debt funds as dry powder to deploy on sharp market corrections.</div>
-    <div class="strategy-point">Auto & EV ecosystem: Interesting for 3–5 year horizon but near-term demand moderation expected.</div>
+<!-- ════════════════════════════════
+     SHEET SETUP
+════════════════════════════════ -->
+<div class="sec" id="sec-setup">
+  <div style="margin-bottom:20px;">
+    <div style="font-family:Syne;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--saffron));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;">Google Sheets Setup</div>
+    <div style="font-size:12px;color:var(--mu2);">3-step setup — free, no API key, works on GitHub Pages</div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="card" style="margin-bottom:18px;">
+    <div class="ct"></div>
+    <div class="ctitle">Architecture — How It Works</div>
+    <div class="arch">
+      <div class="arch-box" style="border:1px solid rgba(0,229,160,.2);">
+        <div style="font-size:24px;margin-bottom:4px;">📈</div>
+        <div style="font-family:Syne;font-size:11px;font-weight:700;color:var(--green);">Yahoo Finance</div>
+        <div style="font-size:9px;color:var(--mu2);margin-top:2px;">Live NSE prices</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box" style="border:1px solid rgba(212,168,67,.2);">
+        <div style="font-size:24px;margin-bottom:4px;">⚙️</div>
+        <div style="font-family:Syne;font-size:11px;font-weight:700;color:var(--gold);">Apps Script</div>
+        <div style="font-size:9px;color:var(--mu2);margin-top:2px;">Server-side fetch<br>No CORS!</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box" style="border:1px solid rgba(77,166,255,.2);">
+        <div style="font-size:24px;margin-bottom:4px;">📊</div>
+        <div style="font-family:Syne;font-size:11px;font-weight:700;color:var(--blue);">Google Sheet</div>
+        <div style="font-size:9px;color:var(--mu2);margin-top:2px;">Stores prices<br>Auto every 1 min</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box" style="border:1px solid rgba(232,115,42,.2);">
+        <div style="font-size:24px;margin-bottom:4px;">🌐</div>
+        <div style="font-family:Syne;font-size:11px;font-weight:700;color:var(--saffron);">Published CSV</div>
+        <div style="font-size:9px;color:var(--mu2);margin-top:2px;">Public URL<br>Zero CORS issues</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box" style="border:1px solid rgba(0,229,160,.2);">
+        <div style="font-size:24px;margin-bottom:4px;">⚡</div>
+        <div style="font-family:Syne;font-size:11px;font-weight:700;color:var(--green);">This App</div>
+        <div style="font-size:9px;color:var(--mu2);margin-top:2px;">Fetches CSV<br>Every 60s</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px;">
+      <span style="padding:5px 12px;background:rgba(0,229,160,.08);border-radius:20px;color:var(--green);border:1px solid rgba(0,229,160,.15);">✅ No API key needed</span>
+      <span style="padding:5px 12px;background:rgba(0,229,160,.08);border-radius:20px;color:var(--green);border:1px solid rgba(0,229,160,.15);">✅ No CORS issues</span>
+      <span style="padding:5px 12px;background:rgba(0,229,160,.08);border-radius:20px;color:var(--green);border:1px solid rgba(0,229,160,.15);">✅ Free forever</span>
+      <span style="padding:5px 12px;background:rgba(0,229,160,.08);border-radius:20px;color:var(--green);border:1px solid rgba(0,229,160,.15);">✅ Works on GitHub Pages</span>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="cfg-panel" style="margin-bottom:18px;">
+    <h3>📋 Step-by-Step Guide</h3>
+
+    <div class="step">
+      <div class="step-n">1</div>
+      <div>
+        <h4>Create a new Google Sheet</h4>
+        <p>Open <a href="https://sheets.new" target="_blank" style="color:var(--blue);">sheets.new</a> — a blank sheet opens instantly. Name it <b style="color:var(--gold);">Bharat Market Data</b>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">2</div>
+      <div>
+        <h4>Open Apps Script and paste the script</h4>
+        <p>In your sheet: <b style="color:var(--gold);">Extensions → Apps Script</b><br>
+        Delete all existing code, paste the script from the <b style="color:var(--gold);">GoogleAppsScript.js</b> file you downloaded.<br>
+        Click <b style="color:var(--gold);">Save</b> (💾), then click <b style="color:var(--gold);">Run → fetchAndWritePrices</b>.<br>
+        Grant permissions when asked. Your sheet will fill with live data!</p>
+        <div class="code">// Key parts of the script:
+UrlFetchApp.fetch("https://query2.finance.yahoo.com/...") // Server-side, no CORS!
+sheet.getRange(...).setValues([row])                       // Writes to sheet
+ScriptApp.newTrigger("fetchAndWritePrices")               // Runs every 1 min
+  .timeBased().everyMinutes(1).create()</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">3</div>
+      <div>
+        <h4>Set up the 1-minute auto trigger</h4>
+        <p>In Apps Script: <b style="color:var(--gold);">Triggers (⏰ icon) → + Add Trigger</b><br>
+        Or simply run <code style="color:var(--green);font-size:10px;">setupTrigger()</code> function — it creates the trigger automatically.<br>
+        After this, your sheet will update with live prices every minute!</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">4</div>
+      <div>
+        <h4>Publish the sheet as CSV</h4>
+        <p><b style="color:var(--gold);">File → Share → Publish to web</b><br>
+        Select: <b>LiveData</b> sheet → <b>Comma-separated values (.csv)</b> → Click <b>Publish</b><br>
+        Copy the URL. It looks like:</p>
+        <div class="code">https://docs.google.com/spreadsheets/d/SHEET_ID/pub?gid=0&single=true&output=csv</div>
+        <p style="margin-top:8px;">Also go to <b style="color:var(--gold);">Share → Anyone with link → Viewer</b></p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">5</div>
+      <div>
+        <h4>Paste your Sheet ID below and connect</h4>
+        <p>Your Sheet ID is the long string in the Google Sheets URL:</p>
+        <div class="code">https://docs.google.com/spreadsheets/d/<span style="color:var(--yellow);">← THIS IS YOUR SHEET ID →</span>/edit</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECT FORM -->
+  <div class="card">
+    <div class="ct"></div>
+    <div class="ctitle">Connect Your Google Sheet</div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <input class="inp" id="sheetIdInp" placeholder="Paste your Google Sheet ID here…" style="flex:1;min-width:200px;">
+      <button class="btn-gold" onclick="connectSheet()">⚡ Connect & Fetch</button>
+      <button class="btn-outline" onclick="loadDemo()">🧪 Demo Mode</button>
+    </div>
+    <div id="connectMsg" style="font-size:11px;display:none;padding:8px 12px;border-radius:8px;margin-top:4px;"></div>
+
+    <!-- Connected state -->
+    <div id="connectedBox" style="display:none;margin-top:14px;padding:14px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="color:var(--green);font-family:Syne;font-size:13px;font-weight:700;margin-bottom:4px;">✅ Connected</div>
+          <div style="font-size:11px;color:var(--mu2);" id="connId">Sheet ID: —</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a id="connLink" href="#" target="_blank" class="btn-outline" style="text-decoration:none;padding:8px 14px;font-size:11px;">Open Sheet ↗</a>
+          <button onclick="disconnect()" class="btn-outline" style="font-size:11px;color:var(--red);border-color:rgba(255,77,109,.3);">Disconnect</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<footer>
-  <div>© 2026 Bharat Market Pulse · Educational purposes only · Not SEBI registered advice</div>
-  <div>Data sources: NSE, BSE, SEBI, Bloomberg estimates · Updated EOD</div>
+<!-- ════════════════════════════════
+     SECTORS
+════════════════════════════════ -->
+<div class="sec" id="sec-sectors">
+  <div style="margin-bottom:18px;">
+    <div style="font-family:Syne;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--saffron));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;">Sector Analysis</div>
+    <div style="font-size:12px;color:var(--mu2);">Valuations, earnings growth & investment signals</div>
+  </div>
+  <div class="g2" style="margin-bottom:16px;">
+    <div class="card"><div class="ct"></div><div class="ctitle">Sector P/E vs Market Average</div><div style="position:relative;height:260px;"><canvas id="cSectorPE"></canvas></div></div>
+    <div class="card"><div class="ct"></div><div class="ctitle">Risk vs EPS Growth (bubble = P/E size)</div><div style="position:relative;height:260px;"><canvas id="cBubble"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <input class="inp" id="sSearch" placeholder="🔍 Search sector…" style="width:180px;" oninput="renderST()">
+      <select class="inp" id="sSort" style="width:120px;" onchange="renderST()">
+        <option value="pe">Sort: P/E</option><option value="pb">Sort: P/B</option>
+        <option value="eps">Sort: EPS</option><option value="risk">Sort: Risk</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="stbl"><thead><tr><th>Sector</th><th>P/E</th><th>P/B</th><th>EPS Growth</th><th>Div Yield</th><th>vs History</th><th>Risk</th><th>Signal</th></tr></thead>
+      <tbody id="sTbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     MACRO
+════════════════════════════════ -->
+<div class="sec" id="sec-macro">
+  <div style="margin-bottom:18px;">
+    <div style="font-family:Syne;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--saffron));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;">Macro Dashboard</div>
+    <div style="font-size:12px;color:var(--mu2);">Key economic indicators driving Indian equity markets</div>
+  </div>
+  <div class="g4" id="mCards" style="margin-bottom:16px;"></div>
+  <div class="g2">
+    <div class="card"><div class="ct"></div><div class="ctitle">PMI — Manufacturing vs Services (FY26)</div><div style="position:relative;height:200px;"><canvas id="cPMI"></canvas></div></div>
+    <div class="card"><div class="ct"></div><div class="ctitle">GST Collections — Monthly (₹ Cr)</div><div style="position:relative;height:200px;"><canvas id="cGST"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SIP CALC
+════════════════════════════════ -->
+<div class="sec" id="sec-calc">
+  <div style="margin-bottom:18px;"><div style="font-family:Syne;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--saffron));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;">SIP & Lump Sum Calculator</div></div>
+  <div class="g2">
+    <div>
+      <div class="card" style="margin-bottom:14px;"><div class="ct"></div><div class="ctitle">SIP Calculator</div>
+        <div style="margin-bottom:12px;"><label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);display:block;margin-bottom:4px;">Monthly SIP (₹)</label><input type="range" class="cslider" id="sAmt" min="500" max="200000" step="500" value="10000" oninput="cSIP()"><div style="font-family:Syne;font-size:15px;font-weight:700;color:var(--gold);text-align:right;" id="sAmtV">₹10,000/mo</div></div>
+        <div style="margin-bottom:12px;"><label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);display:block;margin-bottom:4px;">Years</label><input type="range" class="cslider" id="sYrs" min="1" max="40" step="1" value="15" oninput="cSIP()"><div style="font-family:Syne;font-size:15px;font-weight:700;color:var(--gold);text-align:right;" id="sYrsV">15 years</div></div>
+        <div style="margin-bottom:12px;"><label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);display:block;margin-bottom:4px;">Return % p.a.</label><input type="range" class="cslider" id="sRet" min="6" max="22" step="0.5" value="12" oninput="cSIP()"><div style="font-family:Syne;font-size:15px;font-weight:700;color:var(--gold);text-align:right;" id="sRetV">12%</div></div>
+        <div class="cres" id="sipRes"></div>
+      </div>
+      <div class="card"><div class="ct"></div><div class="ctitle">Historical Nifty 50 SIP Returns (₹10K/mo)</div><div id="histR"></div></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:14px;"><div class="ct"></div><div class="ctitle">SIP Wealth Growth Chart</div><div style="position:relative;height:215px;"><canvas id="cSIPG"></canvas></div></div>
+      <div class="card"><div class="ct"></div><div class="ctitle">Lump Sum Calculator</div>
+        <div style="margin-bottom:12px;"><label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);display:block;margin-bottom:4px;">Amount (₹)</label><input type="range" class="cslider" id="lAmt" min="10000" max="10000000" step="10000" value="500000" oninput="cLS()"><div style="font-family:Syne;font-size:15px;font-weight:700;color:var(--gold);text-align:right;" id="lAmtV">₹5,00,000</div></div>
+        <div style="margin-bottom:12px;"><label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);display:block;margin-bottom:4px;">Years</label><input type="range" class="cslider" id="lYrs" min="1" max="30" step="1" value="10" oninput="cLS()"><div style="font-family:Syne;font-size:15px;font-weight:700;color:var(--gold);text-align:right;" id="lYrsV">10 years</div></div>
+        <div style="margin-bottom:12px;"><label style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);display:block;margin-bottom:4px;">Return % p.a.</label><input type="range" class="cslider" id="lRet" min="6" max="20" step="0.5" value="12" oninput="cLS()"><div style="font-family:Syne;font-size:15px;font-weight:700;color:var(--gold);text-align:right;" id="lRetV">12%</div></div>
+        <div class="cres" id="lsRes"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     RISK
+════════════════════════════════ -->
+<div class="sec" id="sec-risk">
+  <div style="margin-bottom:18px;"><div style="font-family:Syne;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--saffron));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;">Risk Radar</div></div>
+  <div class="g2" style="margin-bottom:16px;">
+    <div class="card"><div class="ct"></div><div class="ctitle">Multi-Factor Risk Radar</div><div style="position:relative;height:270px;"><canvas id="cRadar"></canvas></div></div>
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+      <div class="ct"></div><div class="ctitle" style="width:100%;">Overall Market Risk Score</div>
+      <svg width="150" height="150">
+        <circle cx="75" cy="75" r="58" fill="none" stroke="var(--s3)" stroke-width="11"/>
+        <circle cx="75" cy="75" r="58" fill="none" stroke="var(--yellow)" stroke-width="11" style="transform-origin:75px 75px;transform:rotate(-90deg);" stroke-dasharray="364" stroke-dashoffset="175"/>
+        <text x="75" y="70" text-anchor="middle" font-family="Syne" font-size="28" font-weight="800" fill="var(--yellow)">52</text>
+        <text x="75" y="89" text-anchor="middle" font-family="DM Mono" font-size="9" fill="var(--mu2)">/100</text>
+      </svg>
+      <div style="font-family:Syne;font-size:16px;font-weight:700;color:var(--yellow);margin-top:8px;">MODERATE RISK</div>
+      <div style="font-size:11px;color:var(--mu2);max-width:240px;margin-top:8px;line-height:1.7;">Not in danger zone. Global headwinds & FII selling are key near-term risks.</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;" id="rItems"></div>
+</div>
+
+<footer style="padding:16px 26px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;font-size:10px;color:var(--mu);flex-wrap:wrap;gap:8px;">
+  <span>⚡ Bharat Market Pulse — Educational only · Not SEBI-registered advice</span>
+  <span>Live data via Google Sheets + Apps Script · NSE, BSE, Yahoo Finance</span>
 </footer>
 
 <script>
-const sectors = [
-  {
-    name: "Banking & Finance", icon: "🏦",
-    pe: 13.2, pb: 2.1, epsGrowth: "+16%",
-    hist: 38, riskScore: 35,
-    signal: "buy", riskLabel: "Low–Med"
-  },
-  {
-    name: "IT & Software", icon: "💻",
-    pe: 27.3, pb: 7.4, epsGrowth: "+8%",
-    hist: 68, riskScore: 60,
-    signal: "cautious", riskLabel: "Medium"
-  },
-  {
-    name: "Pharma & Healthcare", icon: "💊",
-    pe: 28.1, pb: 4.2, epsGrowth: "+14%",
-    hist: 55, riskScore: 40,
-    signal: "hold", riskLabel: "Low–Med"
-  },
-  {
-    name: "FMCG & Consumer", icon: "🛒",
-    pe: 48.2, pb: 10.3, epsGrowth: "+10%",
-    hist: 80, riskScore: 50,
-    signal: "hold", riskLabel: "Low"
-  },
-  {
-    name: "Auto & EV", icon: "🚗",
-    pe: 22.4, pb: 3.8, epsGrowth: "+12%",
-    hist: 52, riskScore: 55,
-    signal: "hold", riskLabel: "Medium"
-  },
-  {
-    name: "Infrastructure & Capex", icon: "🏗️",
-    pe: 31.6, pb: 4.1, epsGrowth: "+22%",
-    hist: 62, riskScore: 52,
-    signal: "cautious", riskLabel: "Medium"
-  },
-  {
-    name: "Metals & Mining", icon: "⛏️",
-    pe: 12.8, pb: 1.6, epsGrowth: "+5%",
-    hist: 32, riskScore: 65,
-    signal: "buy", riskLabel: "Med–High"
-  },
-  {
-    name: "Energy & Oil", icon: "⚡",
-    pe: 9.4, pb: 1.2, epsGrowth: "+8%",
-    hist: 28, riskScore: 45,
-    signal: "buy", riskLabel: "Low–Med"
-  },
-  {
-    name: "Real Estate (REITs)", icon: "🏢",
-    pe: 38.4, pb: 3.2, epsGrowth: "+18%",
-    hist: 70, riskScore: 58,
-    signal: "hold", riskLabel: "Medium"
-  },
-  {
-    name: "Telecom", icon: "📡",
-    pe: 24.6, pb: 3.1, epsGrowth: "+20%",
-    hist: 48, riskScore: 42,
-    signal: "hold", riskLabel: "Low–Med"
-  },
+// ═══════════════════════════════════════════════
+// CHART.JS SETUP
+// ═══════════════════════════════════════════════
+Chart.defaults.color = 'rgba(255,255,255,0.35)';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 10;
+const CI = {};
+function mkChart(id, cfg) {
+  const c = document.getElementById(id); if (!c) return;
+  if (CI[id]) { CI[id].destroy(); delete CI[id]; }
+  CI[id] = new Chart(c, cfg);
+}
+window.addEventListener('resize', () => Object.values(CI).forEach(c => c && c.resize()));
+
+// ═══════════════════════════════════════════════
+// GOOGLE SHEETS DATA LAYER
+// Key insight: published Google Sheet CSV has no CORS!
+// ═══════════════════════════════════════════════
+const SK = 'bharatPulse_sheetId';  // localStorage key
+let SHEET_ID = localStorage.getItem(SK) || '';
+
+// ── Build the raw Google Sheets CSV URL ──
+function buildCSVUrl(raw) {
+  if (raw.includes('/pub?') || raw.includes('2PACX-')) {
+    // Already a published URL — strip old params, re-add cleanly
+    const base = raw.split('?')[0];
+    const existing = new URLSearchParams(raw.split('?')[1] || '');
+    const gid = existing.get('gid') || '0';
+    return `${base}?gid=${gid}&single=true&output=csv`;
+  }
+  const match = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  const id = match ? match[1] : raw;
+  return `https://docs.google.com/spreadsheets/d/${id}/pub?gid=0&single=true&output=csv`;
+}
+
+function extractDisplayId(raw) {
+  if (raw.includes('2PACX-') || raw.includes('/pub?')) {
+    return raw.split('?')[0].split('/').pop();
+  }
+  const match = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : raw;
+}
+
+// ── Robust fetch: tries direct, then 3 CORS proxies ──
+const PROXIES = [
+  u => u,                                                    // 1. Direct (works on GitHub Pages)
+  u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`, // 2. corsproxy.io
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, // 3. allorigins
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, // 4. codetabs
 ];
 
-const signalConfig = {
-  buy: { label: "● Buy", cls: "buy" },
-  hold: { label: "● Hold", cls: "hold" },
-  sell: { label: "● Sell", cls: "sell" },
-  cautious: { label: "● Cautious", cls: "cautious" }
-};
+async function fetchCSV(rawInput) {
+  const csvUrl = buildCSVUrl(rawInput);
+  let lastErr = '';
 
-function getValColor(hist) {
-  if (hist < 40) return 'var(--green)';
-  if (hist < 60) return 'var(--yellow)';
-  if (hist < 75) return 'var(--saffron)';
-  return 'var(--red)';
+  for (let i = 0; i < PROXIES.length; i++) {
+    const url = PROXIES[i](csvUrl);
+    try {
+      const res = await Promise.race([
+        fetch(url, { mode: i === 0 ? 'cors' : 'cors', redirect: 'follow' }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+      ]);
+      if (!res.ok) { lastErr = `HTTP ${res.status}`; continue; }
+      const text = await res.text();
+      if (text.includes('accounts.google.com') || text.includes('ServiceLogin')) {
+        throw new Error('Sheet is not public — go to File → Share → Publish to web');
+      }
+      if (text.trim().length < 10) { lastErr = 'Empty response'; continue; }
+      console.log(`✅ Fetched via method ${i+1}${i>0?' (proxy)':' (direct)'}`);
+      return text;
+    } catch(e) {
+      lastErr = e.message;
+      console.warn(`Method ${i+1} failed:`, e.message);
+    }
+  }
+  throw new Error(`Could not fetch sheet data. Last error: ${lastErr}`);
 }
 
-function getValLabel(hist) {
-  if (hist < 40) return 'Cheap';
-  if (hist < 60) return 'Fair';
-  if (hist < 75) return 'Slightly Rich';
-  return 'Expensive';
+// Parse CSV text → array of row objects (first row = headers)
+function parseCSV(text) {
+  const rows = text.trim().split('\n');
+  if (rows.length < 2) return [];
+  const headers = rows[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return rows.slice(1).map(row => {
+    // Handle commas inside quoted fields
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const ch of row) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cols[i] || '');
+    return obj;
+  });
 }
 
-function getRiskBarColor(score) {
-  if (score < 40) return 'var(--green)';
-  if (score < 60) return 'var(--yellow)';
-  if (score < 75) return 'var(--saffron)';
-  return 'var(--red)';
+// ── STATUS ──
+function setStatus(type, msg) {
+  const dot = document.getElementById('sDot');
+  const txt = document.getElementById('sTxt');
+  const nd  = document.getElementById('navDot');
+  const ns  = document.getElementById('navSrc');
+  const tag = document.getElementById('sheetTag');
+  const colors = { loading: '#ffd166', ok: '#00e5a0', err: '#ff8c00', demo: '#b07fff' };
+  const c = colors[type] || '#ffd166';
+  if (dot) { dot.style.background = c; dot.style.animation = type === 'loading' ? 'pulse 1.5s infinite' : 'none'; }
+  if (nd)  nd.style.background = c;
+  if (txt) txt.textContent = msg;
+  if (ns)  ns.textContent = type === 'ok' ? '📊 Google Sheets Live' : type === 'demo' ? '🧪 Demo Mode' : type === 'err' ? '⚠ Sheet Error' : 'Connecting…';
+  if (tag) tag.style.display = type === 'ok' ? 'inline-flex' : 'none';
 }
 
-const body = document.getElementById('sectorBody');
-sectors.forEach(s => {
-  const vc = getValColor(s.hist);
-  const vl = getValLabel(s.hist);
-  const sig = signalConfig[s.signal];
-  const epsColor = s.epsGrowth.startsWith('+') ? 'var(--green)' : 'var(--red)';
+function fmt(n) {
+  if (n == null || n === '' || n === 'N/A') return '—';
+  const num = parseFloat(n);
+  if (isNaN(num)) return n;
+  return num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
 
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td><span class="sector-icon">${s.icon}</span><span class="sector-name">${s.name}</span></td>
-    <td style="color:${getValColor(s.hist)}; font-weight:600;">${s.pe}×</td>
-    <td>${s.pb}×</td>
-    <td style="color:${epsColor}; font-weight:600;">${s.epsGrowth}</td>
-    <td>
-      <div style="font-size:11px;color:${vc};font-weight:600;margin-bottom:4px;">${vl}</div>
-      <div style="height:4px;border-radius:2px;background:var(--surface2);overflow:hidden;width:90px;">
-        <div style="height:100%;width:${s.hist}%;background:${vc};border-radius:2px;"></div>
-      </div>
-    </td>
-    <td>
-      <div class="risk-bar-wrap">
-        <div class="risk-bar-bg">
-          <div class="risk-bar-fill" style="width:${s.riskScore}%;background:${getRiskBarColor(s.riskScore)};"></div>
-        </div>
-        <span class="risk-label-sm">${s.riskLabel}</span>
-      </div>
-    </td>
-    <td><span class="signal ${sig.cls}">${sig.label}</span></td>
-  `;
-  body.appendChild(row);
-});
+// ═══════════════════════════════════════════════
+// MAIN FETCH FROM GOOGLE SHEET
+// ═══════════════════════════════════════════════
+let refreshTimer;
 
-// Risk-O-Meter table
-const riskItems = [
-  { name: "Nifty 50 Large-Cap", risk: 42, label: "Moderate", color: "var(--yellow)" },
-  { name: "Nifty Midcap 100", risk: 78, label: "High", color: "var(--red)" },
-  { name: "Nifty Smallcap 250", risk: 85, label: "Very High", color: "var(--red)" },
-  { name: "Nifty Bank", risk: 38, label: "Mod-Low", color: "var(--green)" },
-  { name: "Nifty IT", risk: 62, label: "Mod-High", color: "var(--saffron)" },
-  { name: "Nifty Pharma", risk: 40, label: "Moderate", color: "var(--yellow)" },
-  { name: "Gold / Sovereign Gold", risk: 22, label: "Low", color: "var(--green)" },
-  { name: "10Y Gsec Bond", risk: 15, label: "Very Low", color: "var(--green)" },
+async function fetchFromSheet() {
+  if (!SHEET_ID) {
+    setStatus('demo', 'No sheet connected — showing demo data. Go to ⚙️ Sheet Setup.');
+    loadDemoData();
+    return;
+  }
+
+  clearInterval(refreshTimer);
+  setStatus('loading', 'Fetching live data from Google Sheets…');
+
+  try {
+    // Fetch the LiveData sheet (gid=0, the first tab written by Apps Script)
+    const url = csvURL(SHEET_ID, 0);
+    const res = await Promise.race([
+      fetch(url),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), 12000))
+    ]);
+
+    if (!res.ok) throw new Error(`HTTP ${res.status} — is the sheet published publicly?`);
+
+    const text = await res.text();
+
+    // Check if it redirected to a login page (means sheet isn't public)
+    if (text.includes('accounts.google.com') || text.includes('Sign in')) {
+      throw new Error('Sheet is not public. Set sharing to "Anyone with link → Viewer"');
+    }
+
+    const rows = parseCSV(text);
+    if (!rows.length) throw new Error('Sheet is empty — did the Apps Script run successfully?');
+
+    // Render data
+    renderIndexCards(rows);
+
+    // Read the "Last_Refresh" metadata row Apps Script writes
+    const metaRow = rows.find(r => r['Name'] === 'Last_Refresh' || r['Name'] === 'last_refresh');
+    const updatedAt = metaRow ? metaRow['Symbol'] : new Date().toLocaleTimeString('en-IN');
+
+    // Update UI
+    const appTime = new Date().toLocaleTimeString('en-IN');
+    setStatus('ok', `✓ Live from Google Sheets · Sheet updated: ${updatedAt} · App fetched: ${appTime}`);
+
+    const sheetInfo = document.getElementById('sheetInfo');
+    if (sheetInfo) sheetInfo.style.display = 'flex';
+    const sheetUp = document.getElementById('sheetUpdatedAt');
+    if (sheetUp) sheetUp.textContent = updatedAt;
+    const openLink = document.getElementById('openSheetLink');
+    if (openLink) openLink.href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+
+    // Start 60s countdown to next fetch
+    let s = 60;
+    refreshTimer = setInterval(() => {
+      s--;
+      const nr = document.getElementById('nextRefresh');
+      if (nr) nr.textContent = s + 's';
+      const el = document.getElementById('sTxt');
+      if (el && el.textContent.includes('App fetched')) {
+        // keep message but update nothing (status is fine)
+      }
+      if (s <= 0) { clearInterval(refreshTimer); fetchFromSheet(); }
+    }, 1000);
+
+  } catch (err) {
+    console.warn('Sheet fetch error:', err.message);
+    setStatus('err', `⚠ ${err.message} — Showing demo data. Check ⚙️ Setup tab.`);
+    loadDemoData();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RENDER INDEX CARDS FROM SHEET ROWS
+// ═══════════════════════════════════════════════
+const IDX_META = [
+  { name: 'Nifty 50',      pe: '21.4×', pc: '#ffd166', sig: 'hold', sl: 'Hold'    },
+  { name: 'Sensex',        pe: '21.8×', pc: '#ffd166', sig: 'hold', sl: 'Hold'    },
+  { name: 'Nifty Bank',    pe: 'P/B 2.1×', pc: '#00e5a0', sig: 'buy',  sl: 'Buy' },
+  { name: 'Nifty Midcap',  pe: '32.6×', pc: '#ff4d6d', sig: 'avoid', sl: 'Avoid' },
+  { name: 'Nifty IT',      pe: '27.3×', pc: '#e8732a', sig: 'watch', sl: 'Caution'},
 ];
 
-const riskTable = document.getElementById('riskTable');
-riskItems.forEach(item => {
-  const tr = document.createElement('tr');
-  tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-  tr.innerHTML = `
-    <td style="padding:12px 0;font-size:12px;width:180px;">${item.name}</td>
-    <td style="padding:12px 8px;">
-      <div style="height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;">
-        <div style="height:100%;width:${item.risk}%;background:${item.color};border-radius:3px;transition:width 1s ease;"></div>
+function buildCardShell(grid) {
+  grid.innerHTML = IDX_META.map((x, i) => `
+    <div class="icard" id="ic${i}">
+      <div class="iname">${x.name}</div>
+      <div class="iprice skel" id="ip${i}">Loading…</div>
+      <div class="ichg" id="ich${i}" style="color:var(--mu2);">—</div>
+      <div style="position:relative;height:40px;margin:8px 0;"><canvas id="isp${i}"></canvas></div>
+      <div class="imeta">
+        <span>P/E: <b style="color:${x.pc}">${x.pe}</b></span>
+        <span class="sig ${x.sig}">${x.sl}</span>
       </div>
-    </td>
-    <td style="padding:12px 0;font-size:11px;color:${item.color};font-weight:600;text-align:right;white-space:nowrap;">${item.label}</td>
-  `;
-  riskTable.appendChild(tr);
+    </div>`).join('');
+}
+
+function renderIndexCards(rows) {
+  const grid = document.getElementById('idxGrid');
+  if (!grid.children.length) buildCardShell(grid);
+
+  // The Apps Script writes rows in the same order as INDICES array
+  // Columns: Name, Symbol, Price, Change, Change%, Prev Close, Open, Day High, Day Low, Volume, Last Updated
+  rows.slice(0, IDX_META.length).forEach((row, i) => {
+    const price  = parseFloat(row['Price']   || 0);
+    const chgAbs = parseFloat(row['Change']  || 0);
+    const chgPct = parseFloat(row['Change%'] || 0);
+    const isUp   = chgAbs >= 0;
+
+    // India VIX row (index 6 in script) — pick from later rows
+    if (row['Name'] && row['Name'].toLowerCase().includes('vix')) {
+      const el = document.getElementById('vixVal');
+      if (el) el.textContent = fmt(price) + ' — ' + (price < 15 ? 'Low' : price < 20 ? 'Moderate' : 'High');
+      return;
+    }
+
+    const priceEl = document.getElementById('ip' + i);
+    const chgEl   = document.getElementById('ich' + i);
+    const card    = document.getElementById('ic' + i);
+
+    if (priceEl && price > 0) {
+      priceEl.textContent = fmt(price);
+      priceEl.className = 'iprice ' + (isUp ? 'up' : 'dn');
+    }
+    if (chgEl && price > 0) {
+      const arrow = isUp ? '▲' : '▼';
+      const sign  = isUp ? '+' : '';
+      chgEl.textContent = `${arrow} ${sign}${fmt(chgAbs)} (${sign}${chgPct.toFixed(2)}%)`;
+      chgEl.className = 'ichg ' + (isUp ? 'up' : 'dn');
+    }
+    if (card) {
+      card.style.borderColor = isUp ? 'rgba(0,229,160,.35)' : 'rgba(255,77,109,.35)';
+      setTimeout(() => { card.style.borderColor = ''; }, 2000);
+    }
+
+    // Draw sparkline
+    drawSparkline('isp' + i, price, isUp);
+  });
+
+  // Breadth (estimate from overall market direction)
+  const niftyChg = parseFloat(rows[0]?.['Change%'] || 0);
+  const adv = Math.round(1100 + niftyChg * 40 + Math.random() * 80);
+  const dec = 2000 - adv;
+  const advPct = (adv / (adv + dec) * 100).toFixed(1);
+  const el1 = document.getElementById('bAdv'), el2 = document.getElementById('bDec');
+  const bA  = document.getElementById('bBarA'), bD = document.getElementById('bBarD');
+  if (el1) el1.textContent = adv.toLocaleString('en-IN');
+  if (el2) el2.textContent = dec.toLocaleString('en-IN');
+  if (bA)  { bA.style.flex = adv; bA.textContent = advPct + '%'; }
+  if (bD)  { bD.style.flex = dec; bD.textContent = (100 - advPct) + '%'; }
+
+  // VIX from row 6 (India VIX)
+  if (rows[6]) {
+    const vix = parseFloat(rows[6]['Price'] || 0);
+    const vEl = document.getElementById('vixVal');
+    if (vEl && vix > 0) vEl.textContent = fmt(vix) + ' — ' + (vix < 15 ? 'Low' : vix < 20 ? 'Moderate' : 'High');
+  }
+}
+
+// ── SPARKLINES ──
+function drawSparkline(id, basePrice, isUp) {
+  const base = basePrice || 22000;
+  const bias = isUp ? 0.44 : 0.56;
+  const pts  = Array.from({ length: 28 }, (_, k) =>
+    base + (Math.random() - bias) * base * 0.003 * (k + 1));
+  const col  = isUp ? '#00e5a0' : '#ff4d6d';
+  if (CI[id]) { CI[id].destroy(); delete CI[id]; }
+  const canvas = document.getElementById(id); if (!canvas) return;
+  CI[id] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: pts.map((_, i) => i),
+      datasets: [{ data: pts, borderColor: col, borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.4,
+          backgroundColor: ctx => {
+            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 40);
+            g.addColorStop(0, col + '44'); g.addColorStop(1, col + '00'); return g;
+          }
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } },
+      animation: { duration: 700 }
+    }
+  });
+}
+
+// ── DEMO DATA ──
+function loadDemoData() {
+  const grid = document.getElementById('idxGrid');
+  if (!grid.children.length) buildCardShell(grid);
+
+  const DEMO = [
+    { Price: '22476', Change: '94.2',   'Change%': '0.42'  },
+    { Price: '74339', Change: '281.5',  'Change%': '0.38'  },
+    { Price: '48214', Change: '294.1',  'Change%': '0.61'  },
+    { Price: '49867', Change: '-89.4',  'Change%': '-0.18' },
+    { Price: '36880', Change: '-419.2', 'Change%': '-1.12' },
+  ];
+
+  DEMO.forEach((row, i) => {
+    const price  = parseFloat(row.Price);
+    const chgAbs = parseFloat(row.Change);
+    const chgPct = parseFloat(row['Change%']);
+    const isUp   = chgAbs >= 0;
+    const pe = document.getElementById('ip' + i);
+    const ce = document.getElementById('ich' + i);
+    if (pe) { pe.textContent = fmt(price); pe.className = 'iprice ' + (isUp ? 'up' : 'dn'); }
+    if (ce) { ce.textContent = `${isUp ? '▲ +' : '▼ '}${fmt(Math.abs(chgAbs))} (${isUp ? '+' : ''}${chgPct.toFixed(2)}%)`; ce.className = 'ichg ' + (isUp ? 'up' : 'dn'); }
+    drawSparkline('isp' + i, price, isUp);
+  });
+
+  const el = document.getElementById('vixVal');
+  if (el) el.textContent = '14.8 — Moderate';
+  const bA = document.getElementById('bBarA'), bD = document.getElementById('bBarD');
+  const ea = document.getElementById('bAdv'), ed = document.getElementById('bDec');
+  if (ea) ea.textContent = '1,241'; if (ed) ed.textContent = '986';
+  if (bA) { bA.style.flex = 1241; bA.textContent = '55.7%'; }
+  if (bD) { bD.style.flex = 986; bD.textContent = '44.3%'; }
+}
+
+// ═══════════════════════════════════════════════
+// CONNECT / DISCONNECT SHEET
+// ═══════════════════════════════════════════════
+// Auto-detect what the user pasted
+function cleanSheetInput(inp) {
+  const val = inp.value.trim();
+  if (val.includes('2PACX-') || val.includes('/pub?')) {
+    // It's a published CSV URL — perfect, use directly!
+    inp.style.borderColor = 'var(--green)';
+    showMsg('ok', '✅ Published CSV URL detected — ready to connect!');
+  } else {
+    const match = val.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      inp.value = match[1];
+      inp.style.borderColor = 'var(--green)';
+      showMsg('ok', '✅ Sheet ID extracted: ' + match[1]);
+    } else if (val.length > 10) {
+      inp.style.borderColor = 'var(--gold)';
+    }
+  }
+}
+
+function connectSheet() {
+  const raw = document.getElementById('sheetIdInp').value.trim();
+  if (!raw) { showMsg('error', '⚠ Please paste your Google Sheet URL or Sheet ID'); return; }
+
+  const displayId = extractDisplayId(raw);
+  showMsg('loading', '🔄 Connecting to Google Sheet (trying direct + proxies)…');
+  SHEET_ID = raw;
+
+  fetchCSV(raw)
+    .then(text => {
+      const rows = parseCSV(text);
+      if (!rows.length) throw new Error('Sheet is empty — run setupSheet() in Apps Script first');
+
+      localStorage.setItem(SK, raw);
+      showMsg('ok', `✅ Connected! Found ${rows.length} rows of live data. Loading…`);
+      document.getElementById('connectedBox').style.display = 'block';
+      document.getElementById('connId').textContent = displayId.length > 50 ? displayId.slice(0,50)+'…' : displayId;
+      document.getElementById('connLink').href = raw.startsWith('http') ? raw : `https://docs.google.com/spreadsheets/d/${raw}`;
+      setTimeout(() => { goTab('overview', document.querySelector('.nt')); fetchFromSheet(); }, 1000);
+    })
+    .catch(err => {
+      SHEET_ID = '';
+      showMsg('error', `❌ ${err.message || 'Connection failed. Check the URL and try again.'}`);
+    });
+}
+
+function disconnect() {
+  SHEET_ID = '';
+  localStorage.removeItem(SK);
+  document.getElementById('connectedBox').style.display = 'none';
+  document.getElementById('sheetIdInp').value = '';
+  showMsg('ok', '✅ Disconnected. App will use demo data.');
+  clearInterval(refreshTimer);
+  loadDemoData();
+  setStatus('demo', 'No sheet connected — demo mode');
+}
+
+function loadDemo() {
+  SHEET_ID = '';
+  setStatus('demo', 'Demo mode — connect your Google Sheet for live data');
+  loadDemoData();
+  goTab('overview', document.querySelector('.nt'));
+  showMsg('ok', '✅ Demo mode active — data is illustrative');
+}
+
+function showMsg(type, msg) {
+  const el = document.getElementById('connectMsg');
+  if (!el) return;
+  el.style.display = 'block';
+  const styles = { ok: 'background:rgba(0,229,160,.08);color:#00e5a0;border:1px solid rgba(0,229,160,.2)', error: 'background:rgba(255,77,109,.08);color:#ff4d6d;border:1px solid rgba(255,77,109,.2)', loading: 'background:rgba(255,209,102,.08);color:#ffd166;border:1px solid rgba(255,209,102,.2)' };
+  el.style.cssText = `font-size:11px;padding:10px 14px;border-radius:8px;margin-top:8px;${styles[type] || styles.loading}`;
+  el.textContent = msg;
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function goTab(id, el) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.nt').forEach(t => t.classList.remove('on'));
+  document.getElementById('sec-' + id).classList.add('on');
+  if (el) el.classList.add('on');
+  setTimeout(() => drawTab(id), 80);
+}
+
+// ═══════════════════════════════════════════════
+// SECTOR TABLE
+// ═══════════════════════════════════════════════
+const SECS = [
+  { name:'Banking & Finance', icon:'🏦', pe:13.2, pb:2.1, eps:'+16%', div:'1.8%', hist:38, risk:35, sig:'buy'   },
+  { name:'IT & Software',     icon:'💻', pe:27.3, pb:7.4, eps:'+8%',  div:'2.1%', hist:68, risk:60, sig:'watch' },
+  { name:'Pharma',            icon:'💊', pe:28.1, pb:4.2, eps:'+14%', div:'0.8%', hist:55, risk:40, sig:'hold'  },
+  { name:'FMCG',              icon:'🛒', pe:48.2, pb:10.3,eps:'+10%', div:'1.9%', hist:80, risk:50, sig:'hold'  },
+  { name:'Auto & EV',         icon:'🚗', pe:22.4, pb:3.8, eps:'+12%', div:'0.9%', hist:52, risk:55, sig:'hold'  },
+  { name:'Infrastructure',    icon:'🏗️', pe:31.6, pb:4.1, eps:'+22%', div:'0.6%', hist:62, risk:52, sig:'watch' },
+  { name:'Metals & Mining',   icon:'⛏️', pe:12.8, pb:1.6, eps:'+5%',  div:'3.2%', hist:32, risk:65, sig:'buy'   },
+  { name:'Energy & Oil',      icon:'⚡', pe:9.4,  pb:1.2, eps:'+8%',  div:'4.1%', hist:28, risk:45, sig:'buy'   },
+  { name:'Real Estate',       icon:'🏢', pe:38.4, pb:3.2, eps:'+18%', div:'0.5%', hist:70, risk:58, sig:'hold'  },
+  { name:'Telecom',           icon:'📡', pe:24.6, pb:3.1, eps:'+20%', div:'0.7%', hist:48, risk:42, sig:'hold'  },
+  { name:'Cement',            icon:'🏭', pe:34.2, pb:5.1, eps:'+11%', div:'0.4%', hist:65, risk:48, sig:'watch' },
+  { name:'Insurance',         icon:'🛡️', pe:42.8, pb:6.4, eps:'+15%', div:'0.3%', hist:72, risk:44, sig:'hold'  },
+];
+const SIGC = { buy:{l:'● Buy',c:'buy'}, hold:{l:'● Hold',c:'hold'}, avoid:{l:'● Avoid',c:'avoid'}, watch:{l:'● Caution',c:'watch'} };
+const hc   = h => h<40?'#00e5a0':h<60?'#ffd166':h<75?'#e8732a':'#ff4d6d';
+const hl   = h => h<40?'Cheap':h<60?'Fair':h<75?'Slightly Rich':'Expensive';
+const rc   = r => r<40?'#00e5a0':r<60?'#ffd166':r<75?'#e8732a':'#ff4d6d';
+
+function renderST() {
+  const q   = (document.getElementById('sSearch')?.value || '').toLowerCase();
+  const srt = document.getElementById('sSort')?.value || 'pe';
+  let list  = SECS.filter(s => s.name.toLowerCase().includes(q));
+  list.sort((a, b) => srt==='pe'?a.pe-b.pe : srt==='pb'?a.pb-b.pb : srt==='eps'?parseFloat(b.eps)-parseFloat(a.eps) : b.risk-a.risk);
+  const tb = document.getElementById('sTbody'); if (!tb) return;
+  tb.innerHTML = list.map(s => {
+    const sig = SIGC[s.sig], ec = s.eps.startsWith('+')?'#00e5a0':'#ff4d6d';
+    return `<tr>
+      <td><span style="font-size:14px;margin-right:8px;">${s.icon}</span><b style="font-family:Syne;font-size:12px;">${s.name}</b></td>
+      <td style="color:${hc(s.hist)};font-weight:700;">${s.pe}×</td>
+      <td>${s.pb}×</td>
+      <td style="color:${ec};font-weight:600;">${s.eps}</td>
+      <td style="color:#4da6ff;">${s.div}</td>
+      <td><div style="font-size:10px;color:${hc(s.hist)};font-weight:600;margin-bottom:3px;">${hl(s.hist)}</div>
+        <div class="meter" style="width:80px;"><div class="mf" style="width:${s.hist}%;background:${hc(s.hist)};"></div></div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;">
+        <div class="meter" style="width:60px;"><div class="mf" style="width:${s.risk}%;background:${rc(s.risk)};"></div></div>
+        <span style="font-size:10px;color:${rc(s.risk)};">${s.risk}</span></div></td>
+      <td><span class="sig ${sig.c}">${sig.l}</span></td></tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════
+const MO = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+
+function drawTab(tab) {
+  if (tab === 'overview') {
+    const nd = [21800,22400,23400,24200,25100,26200,24800,23600,22800,22100,21900,22476];
+    mkChart('cNifty', {
+      type: 'line',
+      data: { labels: MO, datasets: [{ data: nd, borderColor: '#00e5a0', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4,
+          backgroundColor: ctx => { const g = ctx.chart.ctx.createLinearGradient(0,0,0,150); g.addColorStop(0,'rgba(0,229,160,.18)'); g.addColorStop(1,'rgba(0,229,160,0)'); return g; } }] },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{display:false}, tooltip:{callbacks:{label: ctx=>'₹'+fmt(ctx.parsed.y)}} },
+        scales: { x:{grid:{color:'rgba(255,255,255,.04)'}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>fmt(v)}} } }
+    });
+    const rEl = document.getElementById('niftyRet');
+    if (rEl) rEl.textContent = ' · 1Y: +3.1%';
+
+    mkChart('cPE', {
+      type: 'line',
+      data: { labels: ['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','Now'],
+        datasets: [
+          { data:[22,18,26,27,28,16,38,22,22,21,20,21.4], borderColor:'#d4a843', borderWidth:2, pointRadius:4,
+            pointBackgroundColor:[22,18,26,27,28,16,38,22,22,21,20,21.4].map(v=>v>25?'#ff4d6d':v<18?'#00e5a0':'#ffd166'),
+            fill:true, tension:0.35,
+            backgroundColor: ctx=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,'rgba(212,168,67,.22)'); g.addColorStop(1,'rgba(212,168,67,0)'); return g; } },
+          { data:Array(12).fill(20.1), borderColor:'rgba(255,255,255,.18)', borderWidth:1, borderDash:[5,5], pointRadius:0, fill:false }
+        ] },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`P/E: ${ctx.parsed.y}×`}}},
+        scales:{x:{grid:{color:'rgba(255,255,255,.04)'}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'×'},min:12,max:42}} }
+    });
+
+    const n = document.getElementById('fgNeedle');
+    if (n) n.style.transform = 'rotate(-10deg)';
+  }
+
+  if (tab === 'sectors') {
+    renderST();
+    mkChart('cSectorPE', {
+      type: 'bar',
+      data: { labels: SECS.map(s => s.name.split(' ')[0]),
+        datasets: [
+          { label:'P/E', data:SECS.map(s=>s.pe), backgroundColor:SECS.map(s=>hc(s.hist)+'99'), borderColor:SECS.map(s=>hc(s.hist)), borderWidth:1, borderRadius:4 },
+          { data:Array(SECS.length).fill(20), type:'line', borderColor:'rgba(255,255,255,.2)', borderWidth:1.5, borderDash:[5,5], pointRadius:0, fill:false }
+        ] },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`P/E: ${ctx.parsed.y}×`}}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:9}}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'×'}}} }
+    });
+    mkChart('cBubble', {
+      type: 'bubble',
+      data: { datasets: SECS.map(s=>({ label:s.name, data:[{x:s.risk,y:parseFloat(s.eps),r:Math.sqrt(s.pe)*2.4}], backgroundColor:hc(s.hist)+'55', borderColor:hc(s.hist), borderWidth:1.5 })) },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}  Risk:${ctx.parsed.x}  EPS:${ctx.parsed.y}%`}}},
+        scales:{x:{title:{display:true,text:'Risk Score →'},grid:{color:'rgba(255,255,255,.04)'},min:20,max:90}, y:{title:{display:true,text:'EPS Growth (%) ↑'},grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'}}} }
+    });
+  }
+
+  if (tab === 'macro') {
+    const mc = document.getElementById('mCards');
+    if (mc) mc.innerHTML = [
+      {t:'GDP Growth',v:'6.4%',c:'#00e5a0',ch:'▼ from 7.0%',s:'Q3 FY26 · IMF proj 6.5%'},
+      {t:'CPI Inflation',v:'4.3%',c:'#ffd166',ch:'▲ from 3.9%',s:'Within RBI 4±2% band'},
+      {t:'Repo Rate',v:'6.25%',c:'#4da6ff',ch:'▼ 25bps cut',s:'Feb 2026 MPC meeting'},
+      {t:'INR / USD',v:'₹86.4',c:'#ff4d6d',ch:'▼ 2.8% YTD',s:'RBI managing volatility'},
+    ].map(m=>`<div class="card"><div class="ct"></div><div class="ctitle">${m.t}</div>
+      <div style="font-family:Syne;font-size:26px;font-weight:800;color:${m.c};">${m.v}</div>
+      <div style="font-size:11px;color:${m.c};margin:4px 0 6px;">${m.ch}</div>
+      <div style="font-size:10px;color:var(--mu2);">${m.s}</div></div>`).join('');
+
+    mkChart('cPMI', { type:'line', data:{labels:MO, datasets:[
+        {label:'Manufacturing',data:[56,57,58,58.5,57,56.8,57.2,56.9,57.4,57.9,56.3,56.3],borderColor:'#4da6ff',borderWidth:2,pointRadius:3,tension:0.4,fill:false},
+        {label:'Services',data:[60,61,59,61,62,60.5,61.2,59.8,60.1,60.8,59.1,59.1],borderColor:'#00e5a0',borderWidth:2,pointRadius:3,tension:0.4,fill:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,padding:12}}},
+        scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'},min:50,max:66}}} });
+
+    const gv = [187000,172000,175000,183000,176000,174000,180000,178000,188000,196141,193000,null];
+    mkChart('cGST', { type:'bar', data:{labels:MO,datasets:[{data:gv,backgroundColor:gv.map(v=>v>190000?'rgba(0,229,160,.7)':'rgba(212,168,67,.6)'),borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'₹'+fmt(ctx.parsed.y)+' Cr'}}},
+        scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>(v/1000)+'K'}}}} });
+  }
+
+  if (tab === 'calc') { cSIP(); cLS(); buildHistR(); }
+
+  if (tab === 'risk') {
+    mkChart('cRadar', { type:'radar', data:{labels:['Global Macro','FII Flows','Earnings Quality','Valuation','Mkt Breadth','Geopolitical'],
+        datasets:[{data:[78,80,55,58,52,48],borderColor:'rgba(255,77,109,.8)',backgroundColor:'rgba(255,77,109,.1)',pointBackgroundColor:'#ff4d6d',borderWidth:2,pointRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{r:{grid:{color:'rgba(255,255,255,.06)'},angleLines:{color:'rgba(255,255,255,.06)'},ticks:{display:false},min:0,max:100}}} });
+    buildRItems();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// CALCULATORS
+// ═══════════════════════════════════════════════
+function cSIP() {
+  const amt=+document.getElementById('sAmt').value, yrs=+document.getElementById('sYrs').value;
+  const r=+document.getElementById('sRet').value/100/12, n=yrs*12;
+  const fv=amt*((Math.pow(1+r,n)-1)/r)*(1+r), inv=amt*n;
+  document.getElementById('sAmtV').textContent='₹'+amt.toLocaleString('en-IN')+'/mo';
+  document.getElementById('sYrsV').textContent=yrs+' years';
+  document.getElementById('sRetV').textContent=(+document.getElementById('sRet').value).toFixed(1)+'%';
+  document.getElementById('sipRes').innerHTML=`
+    <div class="crrow"><span style="font-size:11px;color:var(--mu2);">Total Invested</span><span style="font-family:Syne;font-size:14px;font-weight:700;color:#4da6ff;">₹${(inv/1e5).toFixed(1)}L</span></div>
+    <div class="crrow"><span style="font-size:11px;color:var(--mu2);">Estimated Gains</span><span style="font-family:Syne;font-size:14px;font-weight:700;color:var(--green);">₹${((fv-inv)/1e5).toFixed(1)}L</span></div>
+    <div class="crrow"><span style="font-size:11px;color:var(--mu2);">Total Wealth</span><span style="font-family:Syne;font-size:16px;font-weight:800;color:var(--gold);">₹${(fv/1e5).toFixed(1)}L</span></div>
+    <div class="crrow"><span style="font-size:11px;color:var(--mu2);">Multiplier</span><span style="font-family:Syne;font-size:14px;font-weight:700;color:var(--yellow);">${(fv/inv).toFixed(1)}×</span></div>`;
+  const mRate=+document.getElementById('sRet').value/100, inv2=[], wlth=[];
+  for (let y=1;y<=yrs;y++) { const nv=y*12,r2=mRate/12; inv2.push(amt*nv); wlth.push(amt*((Math.pow(1+r2,nv)-1)/r2)*(1+r2)); }
+  mkChart('cSIPG', { type:'line', data:{labels:Array.from({length:yrs},(_,i)=>(i+1)+'Y'),datasets:[
+      {label:'Invested',data:inv2,borderColor:'#4da6ff',borderWidth:2,fill:true,tension:0.4,pointRadius:0,backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,210);g.addColorStop(0,'rgba(77,166,255,.25)');g.addColorStop(1,'rgba(77,166,255,0)');return g;}},
+      {label:'Wealth',data:wlth,borderColor:'#00e5a0',borderWidth:2,fill:true,tension:0.4,pointRadius:0,backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,210);g.addColorStop(0,'rgba(0,229,160,.2)');g.addColorStop(1,'rgba(0,229,160,0)');return g;}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,padding:12}},tooltip:{callbacks:{label:ctx=>'₹'+(ctx.parsed.y/1e5).toFixed(1)+'L'}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>'₹'+(v/1e5).toFixed(0)+'L'}}}} });
+}
+
+function cLS() {
+  const amt=+document.getElementById('lAmt').value, yrs=+document.getElementById('lYrs').value;
+  const r=+document.getElementById('lRet').value/100, fv=amt*Math.pow(1+r,yrs);
+  document.getElementById('lAmtV').textContent='₹'+amt.toLocaleString('en-IN');
+  document.getElementById('lYrsV').textContent=yrs+' years';
+  document.getElementById('lRetV').textContent=(+document.getElementById('lRet').value).toFixed(1)+'%';
+  document.getElementById('lsRes').innerHTML=`
+    <div class="crrow"><span style="font-size:11px;color:var(--mu2);">Invested</span><span style="font-family:Syne;font-size:14px;font-weight:700;color:#4da6ff;">₹${(amt/1e5).toFixed(1)}L</span></div>
+    <div class="crrow"><span style="font-size:11px;color:var(--mu2);">Gains</span><span style="font-family:Syne;font-size:14px;font-weight:700;color:var(--green);">₹${((fv-amt)/1e5).toFixed(1)}L</span></div>
+    <div class="crrow"><span style="font-size:11px;color:var(--mu2);">Total Value</span><span style="font-family:Syne;font-size:16px;font-weight:800;color:var(--gold);">₹${(fv/1e5).toFixed(1)}L</span></div>`;
+}
+
+function buildHistR() {
+  const el = document.getElementById('histR'); if (!el) return;
+  el.innerHTML = [
+    {p:'5Y SIP — Jan 2020 to Now', inv:'₹6L',  val:'₹12.4L', x:'15.2%'},
+    {p:'10Y SIP — Jan 2015 to Now',inv:'₹12L', val:'₹38.2L', x:'17.8%'},
+    {p:'15Y SIP — Jan 2010 to Now',inv:'₹18L', val:'₹84.6L', x:'16.4%'},
+    {p:'20Y SIP — Jan 2005 to Now',inv:'₹24L', val:'₹2.1 Cr',x:'18.1%'},
+  ].map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+    <div><div style="font-size:11px;font-family:Syne;font-weight:600;">${d.p}</div><div style="font-size:10px;color:var(--mu2);">${d.inv} invested → ${d.val} value</div></div>
+    <div style="font-family:Syne;font-size:16px;font-weight:800;color:var(--green);">${d.x}</div></div>`).join('');
+}
+
+function buildRItems() {
+  const el = document.getElementById('rItems'); if (!el) return;
+  el.innerHTML = [
+    {icon:'🌍',t:'Global Macro',lv:'HIGH',lc:'h',d:'US Fed rates, DXY strength & EM outflows are key near-term threats.'},
+    {icon:'🏦',t:'FII Selling',lv:'HIGH',lc:'h',d:'₹2.2L Cr equity outflows FY26. Any reversal = major tailwind.'},
+    {icon:'📉',t:'Midcap Froth',lv:'HIGH',lc:'h',d:'Midcap at 32× P/E vs 24× avg. De-rating risk on liquidity shock.'},
+    {icon:'💹',t:'Earnings Growth',lv:'MED',lc:'m',d:'Nifty EPS ~10-12% FY26 vs 18% FY24. Margin pressure persists.'},
+    {icon:'☔',t:'Monsoon Risk',lv:'MED',lc:'m',d:'Deficit rains spike food inflation, constraining RBI rate cuts.'},
+    {icon:'🏛️',t:'Political Stability',lv:'LOW',lc:'l',d:'Stable NDA govt. Next general election 2029. Low near-term risk.'},
+  ].map(r=>{
+    const bg={h:'rgba(255,77,109,.1)',m:'rgba(255,209,102,.1)',l:'rgba(0,229,160,.1)'}[r.lc];
+    const fc={h:'var(--red)',m:'var(--yellow)',l:'var(--green)'}[r.lc];
+    return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:14px;display:flex;gap:12px;">
+      <div style="width:34px;height:34px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${r.icon}</div>
+      <div><div style="font-family:Syne;font-size:12px;font-weight:600;margin-bottom:4px;">${r.t}
+        <span style="font-size:8px;padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:6px;background:${bg};color:${fc};">${r.lv}</span></div>
+      <div style="font-size:10px;color:var(--mu2);line-height:1.6;">${r.d}</div></div></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// COUNTER ANIMATION
+// ═══════════════════════════════════════════════
+function animCount(el, target) {
+  let v = 0; const s = target / 60;
+  const t = setInterval(() => {
+    v = Math.min(v + s, target);
+    el.innerHTML = Math.round(v) + '<span>/100</span>';
+    if (v >= target) clearInterval(t);
+  }, 1200 / 60);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  // Animate score
+  animCount(document.getElementById('vscore'), 62);
+
+  // Draw overview charts immediately
+  drawTab('overview');
+
+  // Live clock
+  setInterval(() => {
+    const el = document.getElementById('navTime');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  }, 1000);
+
+  // If sheet ID saved, try fetching; else load demo
+  if (SHEET_ID) {
+    document.getElementById('sheetIdInp').value = SHEET_ID;
+    document.getElementById('connectedBox').style.display = 'block';
+    document.getElementById('connId').textContent = 'Sheet ID: ' + SHEET_ID;
+    document.getElementById('connLink').href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+    fetchFromSheet();
+  } else {
+    setStatus('demo', 'Demo mode — connect your Google Sheet for live prices');
+    loadDemoData();
+  }
 });
 </script>
-
 </body>
 </html>
